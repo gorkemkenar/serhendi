@@ -1,5 +1,15 @@
 {
+  "crons": [
+    {
+      "path": "/api/keep-alive",
+      "schedule": "*/10 * * * *"
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/api/keep-alive",
+      "destination": "https://serhendi.onrender.com/api/health/"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

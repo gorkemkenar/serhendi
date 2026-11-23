@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { api } from '../api.js';
 import SilivriSerhendiLogo from '../Logo.jsx';
 import { IconEye, IconEyeOff, IconLock, IconShield } from '../icons.jsx';
 import { inputCls, labelCls, primaryBtn } from '../constants.js';
@@ -10,6 +11,11 @@ export default function LoginPage({ onLogin }) {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Giriş sayfası açıldığı anda arka planda Render sunucusuna ön-uyandırma sinyali gönderir
+  useEffect(() => {
+    api.ping();
+  }, []);
 
   const submit = async (username, password, otpCode = '') => {
     setBusy(true);

@@ -41,7 +41,7 @@ const extractMessage = (data) => {
   return '';
 };
 
-async function request(path, { method = 'GET', body } = {}) {
+async function request(path, { method = 'GET', body, retries = 2 } = {}) {
   const headers = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   const token = getToken();
@@ -55,7 +55,11 @@ async function request(path, { method = 'GET', body } = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined
     });
   } catch {
-    throw new ApiError('Sunucuya ulaşılamadı. Django sunucusunun çalıştığından emin olun.', 0, null);
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, 2500));
+      return request(path, { method, body, retries: retries - 1 });
+    }
+    throw new ApiError('Sunucu şu an uyandırılıyor, lütfen birkaç saniye sonra tekrar deneyin.', 0, null);
   }
 
   if (res.status === 204) return null;
@@ -72,6 +76,7 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export const api = {
+  ping: () => fetch(`${API_BASE}/health/`, { method: 'GET' }).catch(() => null),
   login: (username, password, otpCode = '') =>
     request('/auth/login/', { method: 'POST', body: { username, password, otpCode } }),
   logout: () => request('/auth/logout/', { method: 'POST' }),
