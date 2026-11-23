@@ -1,14 +1,8 @@
-// SİLİVRİ SERHENDİ - PWA Servis Çalışanı (Service Worker)
-const CACHE_NAME = 'serhendi-cari-v1';
-const STATIC_ASSETS = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest'];
+// SİLİVRİ SERHENDİ - PWA Servis Çalışanı (Service Worker v2)
+const CACHE_NAME = 'serhendi-cari-v2';
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener('install', () => {
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -25,7 +19,24 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || request.url.includes('/api/') || request.url.includes('/admin/')) {
     return;
   }
+
+  // JS, CSS ve diğer statik dosyalar için: Önce Ağ, çevrimdışıysa Önbellek (asla JS yerine HTML dönme)
   event.respondWith(
-    fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match('/index.html')))
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+        return new Response('', { status: 503, statusText: 'Offline' });
+      })
   );
 });
