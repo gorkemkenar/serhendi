@@ -1,6 +1,10 @@
 // --- DJANGO REST API İSTEMCİSİ ---
 const TOKEN_KEY = 'ss_cari_token';
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+const DEFAULT_API_BASE =
+  typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')
+    ? 'https://serhendi.onrender.com/api'
+    : '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || DEFAULT_API_BASE).replace(/\/+$/, '');
 
 export const getToken = () => {
   try {
