@@ -1,0 +1,291 @@
+from decimal import Decimal
+
+from django.utils import timezone
+from rest_framework import serializers
+
+from .models import SecurityAuditLog, Transaction, Unit, User
+from .security import (
+    compute_transaction_hash,
+    sanitize_text_input,
+    validate_safe_external_url,
+    validate_strong_password,
+)
+
+
+class UnitSerializer(serializers.ModelSerializer):
+    isEncrypted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Unit
+        fields = ['id', 'name', 'contact', 'phone', 'isEncrypted']
+        read_only_fields = ['id', 'isEncrypted']
+
+    def get_isEncrypted(self, obj):
+        return str(obj.phone or '').startswith('enc:v1:')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        # 2. Kriptografik Hatalar: Veritabanında şifreli duran telefon yöneticiye ve ilgili birim gözlemcisine çözülür,
+        # genel gözlemcide ise maskelenmiş olarak gösterilir.
+        if user and user.is_authenticated and (user.is_admin_role or user.unit_id == instance.id):
+            data['phone'] = instance.plain_phone
+            data['phoneMasked'] = False
+        else:
+            data['phone'] = instance.masked_phone
+            data['phoneMasked'] = True
+        return data
+
+    def validate_name(self, value):
+        value = sanitize_text_input(value, 'Cari / Birim adı')
+        if not value:
+            raise serializers.ValidationError('Cari / Birim adı boş bırakılamaz.')
+        return value
+
+    def validate_contact(self, value):
+        return sanitize_text_input(value, 'Yetkili adı') or 'Yetkili'
+
+    def validate_phone(self, value):
+        return sanitize_text_input(value, 'Telefon numarası', neutralize_csv=False) or '-'
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    unitId = serializers.PrimaryKeyRelatedField(source='unit', queryset=Unit.objects.all())
+    createdBy = serializers.CharField(source='created_by', read_only=True)
+    documentUrl = serializers.CharField(source='document_url', required=False, allow_blank=True, default='')
+    integrityHash = serializers.CharField(source='integrity_hash', read_only=True)
+    integrityVerified = serializers.SerializerMethodField()
+    # Yeni kayıtta tutar + tür gönderilir; borç/alacak yönü türe göre belirlenir.
+    amount = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        write_only=True,
+        required=False,
+        min_value=Decimal('0.01'),
+        max_value=Decimal('50000000.00'),
+    )
+
+    class Meta:
+        model = Transaction
+        fields = [
+            'id',
+            'date',
+            'unitId',
+            'type',
+            'description',
+            'debt',
+            'credit',
+            'createdBy',
+            'documentUrl',
+            'integrityHash',
+            'integrityVerified',
+            'amount',
+        ]
+        read_only_fields = ['id', 'integrityHash', 'integrityVerified']
+        extra_kwargs = {
+            'debt': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
+            'credit': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
+        }
+
+    def get_integrityVerified(self, obj):
+        expected = compute_transaction_hash(obj, obj.prev_hash or 'GENESIS')
+        return bool(obj.integrity_hash and obj.integrity_hash == expected)
+
+    def validate_description(self, value):
+        return sanitize_text_input(value, 'Açıklama')
+
+    def validate_documentUrl(self, value):
+        val = (value or '').strip()
+        if not val:
+            return ''
+        validate_safe_external_url(val)
+        return val
+
+    def validate(self, attrs):
+        amount = attrs.pop('amount', None)
+        if self.instance is None:
+            if amount is None:
+                raise serializers.ValidationError({'amount': 'Lütfen geçerli bir tutar girin.'})
+            tx_type = attrs.get('type')
+            is_debt = tx_type in Transaction.DEBT_TYPES
+            attrs['debt'] = amount if is_debt else Decimal('0')
+            attrs['credit'] = Decimal('0') if is_debt else amount
+            if not attrs.get('description'):
+                attrs['description'] = tx_type
+        return attrs
+
+
+class MeSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='display_name', read_only=True)
+    role = serializers.CharField(source='effective_role', read_only=True)
+    isSuperAdmin = serializers.BooleanField(source='is_super_admin_role', read_only=True)
+    roleRank = serializers.IntegerField(source='role_rank', read_only=True)
+    unitId = serializers.CharField(source='unit_id', read_only=True, allow_null=True)
+    twoFactorEnabled = serializers.BooleanField(source='two_factor_enabled', read_only=True)
+    mustChangePassword = serializers.BooleanField(source='must_change_password', read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'name',
+            'username',
+            'role',
+            'isSuperAdmin',
+            'roleRank',
+            'unitId',
+            'twoFactorEnabled',
+            'mustChangePassword',
+        ]
+
+
+class UserSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='full_name', max_length=150)
+    unitId = serializers.PrimaryKeyRelatedField(
+        source='unit', queryset=Unit.objects.all(), allow_null=True, required=False
+    )
+    password = serializers.CharField(write_only=True, required=False, min_length=8, max_length=128)
+    role = serializers.ChoiceField(choices=User.Role.choices, required=False)
+    isProtected = serializers.SerializerMethodField()
+    isSuperAdmin = serializers.BooleanField(source='is_super_admin_role', read_only=True)
+    roleRank = serializers.IntegerField(source='role_rank', read_only=True)
+    canManage = serializers.SerializerMethodField()
+    isLocked = serializers.SerializerMethodField()
+    failedLoginAttempts = serializers.IntegerField(source='failed_login_attempts', read_only=True)
+    twoFactorEnabled = serializers.BooleanField(source='two_factor_enabled', read_only=True)
+    mustChangePassword = serializers.BooleanField(source='must_change_password', read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'name',
+            'username',
+            'role',
+            'roleRank',
+            'isSuperAdmin',
+            'canManage',
+            'unitId',
+            'password',
+            'isProtected',
+            'isLocked',
+            'failedLoginAttempts',
+            'twoFactorEnabled',
+            'mustChangePassword',
+        ]
+        read_only_fields = [
+            'id',
+            'roleRank',
+            'isSuperAdmin',
+            'canManage',
+            'isLocked',
+            'failedLoginAttempts',
+            'twoFactorEnabled',
+            'mustChangePassword',
+        ]
+
+    def get_isProtected(self, obj):
+        return obj.is_super_admin_role
+
+    def get_canManage(self, obj):
+        request = self.context.get('request')
+        actor = getattr(request, 'user', None)
+        if not actor or not actor.is_authenticated:
+            return False
+        return actor.can_manage_user(obj)
+
+    def get_isLocked(self, obj):
+        return bool(obj.locked_until and obj.locked_until > timezone.now())
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['role'] = instance.effective_role
+        return data
+
+    def validate_name(self, value):
+        value = sanitize_text_input(value, 'Hesap / Kişi adı')
+        if not value:
+            raise serializers.ValidationError('Ad zorunludur.')
+        return value
+
+    def validate_username(self, value):
+        value = sanitize_text_input(value, 'Kullanıcı adı')
+        qs = User.objects.filter(username__iexact=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError('Bu kullanıcı adı zaten kayıtlı.')
+        return value
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        actor = getattr(request, 'user', None)
+        role = attrs.get('role', getattr(self.instance, 'role', User.Role.VIEWER_ALL))
+        unit = attrs.get('unit', getattr(self.instance, 'unit', None))
+
+        # Rol Hiyerarşisi Kontrolü
+        if actor and actor.is_authenticated:
+            if self.instance is not None and not actor.can_manage_user(self.instance):
+                raise serializers.ValidationError(
+                    {'role': 'Rol Hiyerarşisi: Yönetici hesaplarını yalnızca Baş Yönetici (admin) kontrol edebilir.'}
+                )
+            if 'role' in attrs or self.instance is None:
+                if self.instance is not None and self.instance.is_super_admin_role and role != User.Role.SUPER_ADMIN:
+                    raise serializers.ValidationError({'role': 'Baş Yönetici (admin) rolü düşürülemez.'})
+                if role == User.Role.SUPER_ADMIN and (self.instance is None or not self.instance.is_super_admin_role):
+                    raise serializers.ValidationError({'role': 'Sistemde yeni Baş Yönetici oluşturulamaz; Yönetici rolünü seçin.'})
+                if not actor.can_assign_role(role):
+                    raise serializers.ValidationError(
+                        {'role': 'Rol Hiyerarşisi: Yönetici rolünü yalnızca Baş Yönetici (admin) atayabilir.'}
+                    )
+
+        if role == User.Role.VIEWER_UNIT and unit is None:
+            raise serializers.ValidationError({'unitId': 'Birim gözlemcisi için bir cari / birim seçin.'})
+        if role != User.Role.VIEWER_UNIT:
+            attrs['unit'] = None
+        pwd = (attrs.get('password') or '').strip()
+        if self.instance is None and not pwd:
+            raise serializers.ValidationError({'password': 'Şifre zorunludur.'})
+        if pwd:
+            uname = attrs.get('username') or getattr(self.instance, 'username', '')
+            validate_strong_password(pwd, uname)
+        return attrs
+
+    def create(self, validated_data):
+        password = validated_data.pop('password').strip()
+        user = User(**validated_data)
+        user.is_staff = user.role in (User.Role.SUPER_ADMIN, User.Role.ADMIN)
+        user.is_superuser = user.role == User.Role.SUPER_ADMIN
+        user.must_change_password = False
+        user.set_password(password)
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = (validated_data.pop('password', '') or '').strip()
+        for key, val in validated_data.items():
+            setattr(instance, key, val)
+        if instance.is_superuser:
+            instance.role = User.Role.SUPER_ADMIN
+        instance.is_staff = instance.is_superuser or instance.role in (User.Role.SUPER_ADMIN, User.Role.ADMIN)
+        if password:
+            instance.set_password(password)
+            instance.must_change_password = False
+        instance.save()
+        return instance
+
+
+class PasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(min_length=8, max_length=128)
+
+    def validate_password(self, value):
+        username = self.context.get('username', '')
+        validate_strong_password(value, username)
+        return value
+
+
+class SecurityAuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SecurityAuditLog
+        fields = ['id', 'timestamp', 'action', 'severity', 'username', 'ip_address', 'path', 'description', 'metadata']

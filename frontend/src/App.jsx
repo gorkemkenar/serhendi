@@ -1,0 +1,746 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { api, getToken, setToken } from './api.js';
+import SilivriSerhendiLogo from './Logo.jsx';
+import {
+  IconArrowDownLeft,
+  IconArrowUpRight,
+  IconBuilding,
+  IconCheck,
+  IconEye,
+  IconFileText,
+  IconLogOut,
+  IconShield,
+  IconSmartphone,
+  IconTable,
+  IconUsers,
+  IconX
+} from './icons.jsx';
+import { formatTRY, getRoleBadge } from './constants.js';
+import LoginPage from './components/LoginPage.jsx';
+import UnitsTab from './components/UnitsTab.jsx';
+import LedgerTab from './components/LedgerTab.jsx';
+import StatementTab from './components/StatementTab.jsx';
+import UsersTab from './components/UsersTab.jsx';
+import SecurityTab from './components/SecurityTab.jsx';
+import TxModal from './components/TxModal.jsx';
+import UnitModal from './components/UnitModal.jsx';
+import InstallModal from './components/InstallModal.jsx';
+
+const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id));
+const byDateAsc = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id.localeCompare(b.id));
+
+// 3. Enjeksiyon Koruması: Excel/CSV formül enjeksiyonunu (=, +, -, @) istemci tarafında da etkisizleştirir
+const safeCsvCell = (val) => {
+  let str = String(val ?? '');
+  if (/^[=+\-@]/.test(str) && !/^-[0-9]/.test(str)) {
+    str = `'${str}`;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+};
+
+export default function App() {
+  // --- OTURUM & VERİ ---
+  const [currentUser, setCurrentUser] = useState(null);
+  const [booting, setBooting] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
+  const [units, setUnits] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [users, setUsers] = useState([]);
+
+  // --- ARAYÜZ DURUMU ---
+  const [activeTab, setActiveTab] = useState('units');
+  const [unitViewMode, setUnitViewMode] = useState('table');
+  const [unitSearch, setUnitSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [unitFilter, setUnitFilter] = useState('ALL');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [statementUnitId, setStatementUnitId] = useState('');
+
+  const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [unitModal, setUnitModal] = useState(null); // null | { unit: Unit | null }
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+  const isUnitObserver = currentUser?.role === 'viewer_unit';
+
+  const notify = useCallback((text, tone = 'success') => {
+    setToast({ text, tone });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }, []);
+
+  const resetSession = useCallback(() => {
+    setToken(null);
+    setCurrentUser(null);
+    setUnits([]);
+    setTransactions([]);
+    setUsers([]);
+    setActiveTab('units');
+    setUnitFilter('ALL');
+    setTypeFilter('ALL');
+    setSearchQuery('');
+    setUnitSearch('');
+  }, []);
+
+  const handleError = useCallback(
+    (err) => {
+      if (err?.status === 401) {
+        resetSession();
+        notify('Oturum süresi doldu, lütfen tekrar giriş yapın.', 'error');
+        return;
+      }
+      notify(err?.message || 'Beklenmeyen bir hata oluştu.', 'error');
+    },
+    [notify, resetSession]
+  );
+
+  const loadData = useCallback(
+    async (user) => {
+      setLoadingData(true);
+      try {
+        const [unitList, txList] = await Promise.all([api.units.list(), api.transactions.list()]);
+        setUnits(unitList);
+        setTransactions(txList);
+        setUsers(user.role === 'admin' || user.role === 'super_admin' ? await api.users.list() : []);
+      } catch (err) {
+        handleError(err);
+      } finally {
+        setLoadingData(false);
+      }
+    },
+    [handleError]
+  );
+
+  // Açılışta kayıtlı oturumu doğrula
+  useEffect(() => {
+    if (!getToken()) {
+      setBooting(false);
+      return;
+    }
+    api
+      .me()
+      .then((user) => {
+        setCurrentUser(user);
+        return loadData(user);
+      })
+      .catch(() => setToken(null))
+      .finally(() => setBooting(false));
+  }, [loadData]);
+
+  // PWA "Ana ekrana ekle" istemi
+  useEffect(() => {
+    const onBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+  }, []);
+
+  // Ekstre için geçerli bir birim seçili olsun
+  useEffect(() => {
+    if (isUnitObserver && currentUser?.unitId) {
+      setStatementUnitId(currentUser.unitId);
+    } else if (units.length && !units.some((u) => u.id === statementUnitId)) {
+      setStatementUnitId(units[0].id);
+    }
+  }, [units, statementUnitId, isUnitObserver, currentUser]);
+
+  // --- HESAPLAMALAR ---
+  const visibleUnitsWithSummary = useMemo(() => {
+    const q = unitSearch.trim().toLocaleLowerCase('tr-TR');
+    return units
+      .filter((u) => {
+        if (!q) return true;
+        return [u.name, u.contact, u.phone, u.id].some((v) => String(v || '').toLocaleLowerCase('tr-TR').includes(q));
+      })
+      .map((unit) => {
+        const unitTxs = transactions.filter((t) => t.unitId === unit.id).sort(byDateDesc);
+        const totalDebt = unitTxs.reduce((acc, t) => acc + (Number(t.debt) || 0), 0);
+        const totalCredit = unitTxs.reduce((acc, t) => acc + (Number(t.credit) || 0), 0);
+        return {
+          ...unit,
+          totalDebt,
+          totalCredit,
+          netBalance: totalDebt - totalCredit,
+          lastTxDate: unitTxs.length > 0 ? unitTxs[0].date : '-',
+          txCount: unitTxs.length
+        };
+      });
+  }, [units, transactions, unitSearch]);
+
+  const kpiStats = useMemo(() => {
+    const totalDebt = visibleUnitsWithSummary.reduce((s, u) => s + u.totalDebt, 0);
+    const totalCredit = visibleUnitsWithSummary.reduce((s, u) => s + u.totalCredit, 0);
+    return { totalDebt, totalCredit, netBalance: totalDebt - totalCredit };
+  }, [visibleUnitsWithSummary]);
+
+  const filteredTransactions = useMemo(() => {
+    const q = searchQuery.trim().toLocaleLowerCase('tr-TR');
+    return transactions
+      .filter((tx) => {
+        if (unitFilter !== 'ALL' && tx.unitId !== unitFilter) return false;
+        if (typeFilter !== 'ALL' && tx.type !== typeFilter) return false;
+        if (q) {
+          const unitName = units.find((u) => u.id === tx.unitId)?.name.toLocaleLowerCase('tr-TR') || '';
+          return (
+            tx.description.toLocaleLowerCase('tr-TR').includes(q) || tx.id.toLocaleLowerCase('tr-TR').includes(q) || unitName.includes(q)
+          );
+        }
+        return true;
+      })
+      .sort(byDateDesc);
+  }, [transactions, unitFilter, typeFilter, searchQuery, units]);
+
+  const statementReport = useMemo(() => {
+    const targetId = isUnitObserver ? currentUser?.unitId : statementUnitId;
+    const unit = units.find((u) => u.id === targetId) || units[0];
+    if (!unit) return { unit: null, rows: [], totalDebt: 0, totalCredit: 0, netBalance: 0 };
+
+    let running = 0;
+    const rows = transactions
+      .filter((t) => t.unitId === unit.id)
+      .sort(byDateAsc)
+      .map((r) => {
+        running += (Number(r.debt) || 0) - (Number(r.credit) || 0);
+        return { ...r, runningBalance: running };
+      });
+
+    const totalDebt = rows.reduce((s, r) => s + (Number(r.debt) || 0), 0);
+    const totalCredit = rows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+    return { unit, rows, totalDebt, totalCredit, netBalance: totalDebt - totalCredit };
+  }, [units, transactions, statementUnitId, isUnitObserver, currentUser]);
+
+  // --- OTURUM İŞLEMLERİ ---
+  const handleLogin = async (username, password, otpCode = '') => {
+    try {
+      const res = await api.login(username.trim(), password, otpCode);
+      if (res?.requires2FA) {
+        return { requires2FA: true, detail: res.detail };
+      }
+      const { token, user } = res;
+      setToken(token);
+      setCurrentUser(user);
+      setActiveTab('units');
+      setStatementUnitId(user.unitId || '');
+      notify(`Giriş yapıldı: ${user.name}`);
+      await loadData(user);
+      return null;
+    } catch (err) {
+      return { error: err.message || 'Kullanıcı adı veya giriş şifresi hatalı!' };
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Sunucuya ulaşılamasa da yerel oturumu kapat
+    }
+    resetSession();
+  };
+
+  // --- CARİ / BİRİM İŞLEMLERİ ---
+  const handleSaveUnit = async (id, form) => {
+    try {
+      const payload = { name: form.name, contact: form.contact, phone: form.phone };
+      if (id) {
+        const updated = await api.units.update(id, payload);
+        setUnits((prev) => prev.map((u) => (u.id === id ? updated : u)));
+        notify('Cari / Birim bilgileri güncellendi.');
+      } else {
+        const created = await api.units.create(payload);
+        setUnits((prev) => [...prev, created]);
+        notify('Yeni cari / birim şifreli olarak eklendi.');
+      }
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleQuickSave = async (quick) => {
+    if (!quick.name.trim()) {
+      notify('Cari / Birim adı boş bırakılamaz.', 'error');
+      return false;
+    }
+    const ok = await handleSaveUnit(quick.id, quick);
+    if (ok) notify('Cari adı ve telefon numarası güncellendi.');
+    return ok;
+  };
+
+  const handleDeleteUnit = async (unit) => {
+    const count = transactions.filter((t) => t.unitId === unit.id).length;
+    const msg = count
+      ? `"${unit.name}" ve ona ait ${count} cari hareket kalıcı olarak silinecek. Emin misiniz?`
+      : `"${unit.name}" silinecek. Emin misiniz?`;
+    if (!window.confirm(msg)) return;
+    try {
+      await api.units.remove(unit.id);
+      setUnits((prev) => prev.filter((u) => u.id !== unit.id));
+      setTransactions((prev) => prev.filter((t) => t.unitId !== unit.id));
+      notify('Cari / Birim kaldırıldı.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  // --- CARİ HAREKET İŞLEMLERİ ---
+  const handleCreateTransaction = async (form) => {
+    const amt = parseFloat(form.amount);
+    if (isNaN(amt) || amt <= 0) {
+      notify('Lütfen geçerli bir tutar girin.', 'error');
+      return false;
+    }
+    try {
+      const created = await api.transactions.create({
+        date: form.date,
+        unitId: form.unitId,
+        type: form.type,
+        description: form.description,
+        documentUrl: form.documentUrl || '',
+        amount: amt.toFixed(2)
+      });
+      setTransactions((prev) => [created, ...prev]);
+      notify('Yeni cari hareket HMAC-SHA256 imzasıyla kaydedildi.');
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleUpdateTransaction = async (id, patch) => {
+    try {
+      const updated = await api.transactions.update(id, patch);
+      setTransactions((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      notify('Kayıt güncellendi ve yeniden imzalandı.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const handleDeleteTransaction = async (tx) => {
+    if (!window.confirm(`${tx.id} numaralı hareket silinecek. Emin misiniz?`)) return;
+    try {
+      await api.transactions.remove(tx.id);
+      setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
+      notify('Cari hareket silindi.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  // --- KULLANICI İŞLEMLERİ ---
+  const handleCreateUser = async (data) => {
+    try {
+      const created = await api.users.create(data);
+      setUsers((prev) => [...prev, created]);
+      notify(`${created.name} hesabı güçlü şifreyle eklendi.`);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleUpdateUser = async (uid, data) => {
+    try {
+      const updated = await api.users.update(uid, data);
+      setUsers((prev) => prev.map((u) => (u.id === uid ? updated : u)));
+      if (currentUser?.id === uid) {
+        setCurrentUser((prev) => (prev ? { ...prev, name: updated.name, role: updated.role, unitId: updated.unitId } : prev));
+      }
+      notify('Kullanıcı bilgileri güncellendi.');
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleAssignRole = async (uid, data) => {
+    try {
+      const updated = await api.users.assignRole(uid, data);
+      setUsers((prev) => prev.map((u) => (u.id === uid ? updated : u)));
+      notify(`@${updated.username} hesabının rolü (${getRoleBadge(updated.role).short}) olarak güncellendi.`);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleUnlockUser = async (user) => {
+    try {
+      const res = await api.users.unlock(user.id);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isLocked: false, failedLoginAttempts: 0 } : u)));
+      notify(res?.detail || 'Hesap kilidi kaldırıldı.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const handleSetPassword = async (uid, password) => {
+    if (!password.trim()) {
+      notify('Şifre boş olamaz.', 'error');
+      return false;
+    }
+    try {
+      await api.users.setPassword(uid, password.trim());
+      if (currentUser?.id === uid) {
+        setCurrentUser((prev) => (prev ? { ...prev, mustChangePassword: false } : prev));
+      }
+      setUsers((prev) => prev.map((u) => (u.id === uid ? { ...u, mustChangePassword: false } : u)));
+      notify('Kullanıcı şifresi güçlü şifre politikasıyla güncellendi.');
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    if (!window.confirm(`"${user.name}" kullanıcısı silinecek. Emin misiniz?`)) return;
+    try {
+      await api.users.remove(user.id);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      notify('Kullanıcı silindi.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const handleResetDefaults = async () => {
+    if (!window.confirm('Tüm birimler ve hareketler silinip varsayılan 8 birim, örnek hareketler ve varsayılan kullanıcı şifreleri yüklenecek. Emin misiniz?')) return;
+    try {
+      const res = await api.resetDefaults();
+      await loadData(currentUser);
+      notify(res?.detail || 'Varsayılanlar yüklendi.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  // --- 8. VERİ BÜTÜNLÜĞÜ İMZALI (SHA-256 CHECKSUM) DIŞA AKTARMA ---
+  const exportCSV = async () => {
+    const headers = ['İşlem No', 'Tarih', 'Birim', 'Tür', 'Açıklama', 'Borç (TL)', 'Alacak (TL)', 'Kaydı Giren', 'HMAC-SHA256 İmza'];
+    const lines = filteredTransactions.map((tx) => {
+      const uName = units.find((u) => u.id === tx.unitId)?.name || tx.unitId;
+      return [tx.id, tx.date, uName, tx.type, tx.description, tx.debt, tx.credit, tx.createdBy, tx.integrityHash || '']
+        .map(safeCsvCell)
+        .join(';');
+    });
+    const bodyContent = [headers.join(';'), ...lines].join('\n');
+    let checksumFooter = '';
+    try {
+      const buf = new TextEncoder().encode(bodyContent);
+      const digest = await window.crypto.subtle.digest('SHA-256', buf);
+      const hex = Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+      checksumFooter = `\n"# SHA-256 VERİ BÜTÜNLÜĞÜ İMZASI (CHECKSUM):";"${hex}"`;
+    } catch {
+      checksumFooter = '';
+    }
+    const blob = new Blob(['\uFEFF' + bodyContent + checksumFooter], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Silivri_Serhendi_Cari_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('SHA-256 bütünlük imzalı CSV tablosu indirildi.');
+  };
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        setDeferredPrompt(null);
+        return;
+      } catch {
+        // Rehberi aç
+      }
+    }
+    setIsInstallModalOpen(true);
+  };
+
+  // --- RENDER ---
+  if (booting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center serhendi-bg">
+        <div className="flex flex-col items-center gap-3 animate-pulse">
+          <SilivriSerhendiLogo className="w-14 h-16" showText={false} />
+          <span className="text-sm font-bold text-slate-500">Yükleniyor...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <>
+        <LoginPage onLogin={handleLogin} />
+        {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      </>
+    );
+  }
+
+  const roleInfo = getRoleBadge(currentUser.role);
+  const RoleIcon = roleInfo.Icon;
+
+  const tabs = [
+    { key: 'units', label: 'Cariler & Bakiyeler', Icon: IconBuilding, count: visibleUnitsWithSummary.length },
+    { key: 'ledger', label: 'Cari Hareketler', Icon: IconTable, count: filteredTransactions.length },
+    { key: 'statement', label: 'Cari Hesap Ekstresi', Icon: IconFileText },
+    ...(isAdmin
+      ? [
+          { key: 'users', label: 'Kullanıcı & Rol Yönetimi', Icon: IconUsers, count: users.length },
+          { key: 'security', label: 'Güvenlik', Icon: IconShield }
+        ]
+      : [])
+  ];
+
+  return (
+    <div className="min-h-screen serhendi-bg text-slate-900">
+      {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+
+      {/* ÜST BAŞLIK */}
+      <header className="no-print sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <SilivriSerhendiLogo className="w-9 h-10 sm:w-11 sm:h-12" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden md:flex flex-col items-end leading-tight">
+              <span className="text-sm font-bold text-slate-800 truncate max-w-[220px]">{currentUser.name}</span>
+              <span className={`mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${roleInfo.cls}`}>
+                <RoleIcon className="w-3 h-3" />
+                {roleInfo.label}
+              </span>
+            </div>
+            <span className={`md:hidden inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border ${roleInfo.cls}`}>
+              <RoleIcon className="w-3 h-3" />
+              {roleInfo.short}
+            </span>
+            <button
+              onClick={handleInstallClick}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-50 hover:bg-emerald-100 text-[#0f6b36] border border-emerald-200 transition cursor-pointer"
+            >
+              <IconSmartphone />
+              <span className="hidden lg:inline">Telefona İndir / Ana Ekrana Ekle</span>
+              <span className="lg:hidden">İndir</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-white transition cursor-pointer"
+            >
+              <IconLogOut />
+              <span className="hidden sm:inline">Çıkış Yap</span>
+              <span className="sm:hidden">Çıkış</span>
+            </button>
+          </div>
+        </div>
+
+        {/* SEKMELER */}
+        <nav className="max-w-7xl mx-auto px-3 sm:px-6 flex gap-1 overflow-x-auto -mb-px">
+          {tabs.map(({ key, label, Icon: TabIcon, count }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-t border-x transition whitespace-nowrap cursor-pointer ${
+                activeTab === key ? 'bg-slate-50 text-[#0f6b36] border-slate-200' : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <TabIcon />
+              {label}
+              {count !== undefined && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                    activeTab === key ? 'bg-[#0f6b36] text-white' : 'bg-slate-200 text-slate-600'
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4">
+        {/* 5. GÜVENLİK YANLIŞ YAPILANDIRMASI UYARISI (Varsayılan Şifre Uyarısı - Sadece Yönetici/Admin) */}
+        {isAdmin && currentUser.mustChangePassword && (
+          <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-200">
+            <div className="flex items-start gap-2.5">
+              <IconShield className="w-4 h-4 text-rose-700 mt-0.5 shrink-0" />
+              <p className="text-xs sm:text-sm text-rose-900">
+                <b>Güvenlik Yapılandırma Uyarısı (Madde 5 & 7):</b> Hesabınızda varsayılan/basit bir test şifresi kullanılıyor. Canlı kullanımda güvenliğiniz için güçlü bir şifre belirleyin ve 2FA’yı aktifleştirin.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('security')}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-700 text-white hover:bg-rose-800 cursor-pointer whitespace-nowrap"
+            >
+              Güvenlik Ayarlarına Git
+            </button>
+          </div>
+        )}
+
+        {/* KPI KARTLARI */}
+        <section className="no-print grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <KpiCard
+            title="Toplam Borç / Sevkiyat"
+            value={formatTRY(kpiStats.totalDebt)}
+            valueCls="text-rose-600"
+            icon={<IconArrowUpRight />}
+            iconCls="bg-rose-50 text-rose-600"
+          />
+          <KpiCard
+            title="Toplam Alacak / Ödeme"
+            value={formatTRY(kpiStats.totalCredit)}
+            valueCls="text-[#0f6b36]"
+            icon={<IconArrowDownLeft />}
+            iconCls="bg-emerald-50 text-[#0f6b36]"
+          />
+          <KpiCard
+            title="Net Bakiye Durumu"
+            value={formatTRY(kpiStats.netBalance)}
+            valueCls={kpiStats.netBalance > 0 ? 'text-rose-600' : 'text-[#0f6b36]'}
+            icon={<IconCheck className="w-5 h-5" />}
+            iconCls="bg-amber-50 text-[#b8952b]"
+          />
+        </section>
+
+        {loadingData && <div className="no-print text-xs font-semibold text-slate-500">Veriler yükleniyor...</div>}
+
+        {activeTab === 'units' && (
+          <UnitsTab
+            units={visibleUnitsWithSummary}
+            isAdmin={isAdmin}
+            isUnitObserver={isUnitObserver}
+            search={unitSearch}
+            onSearch={setUnitSearch}
+            viewMode={unitViewMode}
+            onViewMode={setUnitViewMode}
+            onNewUnit={() => setUnitModal({ unit: null })}
+            onNewTx={() => setIsTxModalOpen(true)}
+            onEditUnit={(u) => setUnitModal({ unit: u })}
+            onQuickSave={handleQuickSave}
+            onDeleteUnit={handleDeleteUnit}
+            onShowStatement={(id) => {
+              setStatementUnitId(id);
+              setActiveTab('statement');
+            }}
+          />
+        )}
+
+        {activeTab === 'ledger' && (
+          <LedgerTab
+            transactions={filteredTransactions}
+            units={units}
+            isAdmin={isAdmin}
+            isUnitObserver={isUnitObserver}
+            searchQuery={searchQuery}
+            onSearch={setSearchQuery}
+            unitFilter={unitFilter}
+            onUnitFilter={setUnitFilter}
+            typeFilter={typeFilter}
+            onTypeFilter={setTypeFilter}
+            onExport={exportCSV}
+            onNewTx={() => setIsTxModalOpen(true)}
+            onUpdateTx={handleUpdateTransaction}
+            onDeleteTx={handleDeleteTransaction}
+          />
+        )}
+
+        {activeTab === 'statement' && (
+          <StatementTab
+            report={statementReport}
+            units={units}
+            isUnitObserver={isUnitObserver}
+            statementUnitId={statementUnitId}
+            onSelectUnit={setStatementUnitId}
+          />
+        )}
+
+        {activeTab === 'users' && isAdmin && (
+          <UsersTab
+            users={users}
+            units={units}
+            currentUser={currentUser}
+            onCreateUser={handleCreateUser}
+            onUpdateUser={handleUpdateUser}
+            onAssignRole={handleAssignRole}
+            onUnlockUser={handleUnlockUser}
+            onSetPassword={handleSetPassword}
+            onDeleteUser={handleDeleteUser}
+            onResetDefaults={handleResetDefaults}
+          />
+        )}
+
+        {activeTab === 'security' && isAdmin && (
+          <SecurityTab
+            currentUser={currentUser}
+            isAdmin={isAdmin}
+            onNotify={notify}
+            onRefreshUsers={() => loadData(currentUser)}
+            onSelfPasswordChanged={(updatedMe) => {
+              if (updatedMe) setCurrentUser(updatedMe);
+              loadData(updatedMe || currentUser);
+            }}
+          />
+        )}
+      </main>
+
+      {isTxModalOpen && isAdmin && (
+        <TxModal
+          units={units}
+          defaultUnitId={unitFilter !== 'ALL' ? unitFilter : statementUnitId}
+          onClose={() => setIsTxModalOpen(false)}
+          onSubmit={handleCreateTransaction}
+        />
+      )}
+
+      {unitModal && isAdmin && <UnitModal unit={unitModal.unit} onClose={() => setUnitModal(null)} onSubmit={handleSaveUnit} />}
+
+      {isInstallModalOpen && <InstallModal onClose={() => setIsInstallModalOpen(false)} />}
+    </div>
+  );
+}
+
+function KpiCard({ title, value, valueCls, icon, iconCls }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</div>
+        <div className={`text-xl sm:text-2xl font-black mt-1 tabular-nums truncate ${valueCls}`}>{value}</div>
+      </div>
+      <div className={`p-2.5 rounded-xl shrink-0 ${iconCls}`}>{icon}</div>
+    </div>
+  );
+}
+
+function Toast({ toast, onClose }) {
+  const isError = toast.tone === 'error';
+  return (
+    <div className="no-print fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-[calc(100%-2rem)] max-w-md">
+      <div
+        className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-lg border text-sm font-semibold ${
+          isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-[#0f6b36]'
+        }`}
+      >
+        {isError ? <IconX className="w-4 h-4 shrink-0" /> : <IconCheck className="w-4 h-4 shrink-0" />}
+        <span className="flex-1">{toast.text}</span>
+        <button onClick={onClose} className="opacity-60 hover:opacity-100 cursor-pointer" aria-label="Kapat">
+          <IconX className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}

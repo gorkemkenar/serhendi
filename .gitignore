@@ -1,0 +1,26 @@
+# Python & Sanal Ortam
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Veritabanı & Statik Dosyalar
+backend/db.sqlite3
+backend/db.sqlite3-journal
+backend/staticfiles/
+
+# Node & Frontend Build
+node_modules/
+frontend/dist/
+npm-debug.log*
+
+# Ortam Değişkenleri & İşletim Sistemi
+.env
+.env.local
+.env.production
+.DS_Store
+Thumbs.db
+*.log
