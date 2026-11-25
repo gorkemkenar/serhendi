@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import SecurityAuditLog, Transaction, Unit, User
+from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
+
+
+@admin.register(UnitItem)
+class UnitItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'unit', 'name', 'debt', 'paid')
+    list_filter = ('unit', 'name')
+    search_fields = ('id', 'name', 'unit__name')
 
 
 @admin.register(Unit)

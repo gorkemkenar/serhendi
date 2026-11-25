@@ -44,6 +44,7 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
   const [units, setUnits] = useState([]);
+  const [unitItems, setUnitItems] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [users, setUsers] = useState([]);
 
@@ -76,6 +77,7 @@ export default function App() {
     setToken(null);
     setCurrentUser(null);
     setUnits([]);
+    setUnitItems([]);
     setTransactions([]);
     setUsers([]);
     setActiveTab('units');
@@ -101,8 +103,13 @@ export default function App() {
     async (user) => {
       setLoadingData(true);
       try {
-        const [unitList, txList] = await Promise.all([api.units.list(), api.transactions.list()]);
+        const [unitList, itemList, txList] = await Promise.all([
+          api.units.list(),
+          api.unitItems.list().catch(() => []),
+          api.transactions.list()
+        ]);
         setUnits(unitList);
+        setUnitItems(itemList);
         setTransactions(txList);
         setUsers(user.role === 'admin' || user.role === 'super_admin' ? await api.users.list() : []);
       } catch (err) {
@@ -155,14 +162,25 @@ export default function App() {
     return units
       .filter((u) => {
         if (!q) return true;
-        return [u.name, u.contact, u.phone, u.id].some((v) => String(v || '').toLocaleLowerCase('tr-TR').includes(q));
+        const uItems = unitItems.filter((i) => i.unitId === u.id);
+        return (
+          [u.name, u.contact, u.phone, u.id].some((v) => String(v || '').toLocaleLowerCase('tr-TR').includes(q)) ||
+          uItems.some((i) => String(i.name || '').toLocaleLowerCase('tr-TR').includes(q))
+        );
       })
       .map((unit) => {
         const unitTxs = transactions.filter((t) => t.unitId === unit.id).sort(byDateDesc);
-        const totalDebt = unitTxs.reduce((acc, t) => acc + (Number(t.debt) || 0), 0);
-        const totalCredit = unitTxs.reduce((acc, t) => acc + (Number(t.credit) || 0), 0);
+        const items = unitItems.filter((i) => i.unitId === unit.id);
+        const txDebt = unitTxs.reduce((acc, t) => acc + (Number(t.debt) || 0), 0);
+        const txCredit = unitTxs.reduce((acc, t) => acc + (Number(t.credit) || 0), 0);
+        const itemsDebt = items.reduce((acc, i) => acc + (Number(i.debt) || 0), 0);
+        const itemsPaid = items.reduce((acc, i) => acc + (Number(i.paid) || 0), 0);
+        // Kalemler varsa cari toplamlarını kalemlerin Borç / Ödenen toplamıyla veya hareketlerle uyumlu göster
+        const totalDebt = items.length > 0 ? itemsDebt : txDebt;
+        const totalCredit = items.length > 0 ? itemsPaid : txCredit;
         return {
           ...unit,
+          items,
           totalDebt,
           totalCredit,
           netBalance: totalDebt - totalCredit,
@@ -170,7 +188,7 @@ export default function App() {
           txCount: unitTxs.length
         };
       });
-  }, [units, transactions, unitSearch]);
+  }, [units, unitItems, transactions, unitSearch]);
 
   const kpiStats = useMemo(() => {
     const totalDebt = visibleUnitsWithSummary.reduce((s, u) => s + u.totalDebt, 0);
@@ -197,8 +215,11 @@ export default function App() {
 
   const statementReport = useMemo(() => {
     const targetId = isUnitObserver ? currentUser?.unitId : statementUnitId;
-    const unit = units.find((u) => u.id === targetId) || units[0];
-    if (!unit) return { unit: null, rows: [], totalDebt: 0, totalCredit: 0, netBalance: 0 };
+    const rawUnit = units.find((u) => u.id === targetId) || units[0];
+    if (!rawUnit) return { unit: null, rows: [], totalDebt: 0, totalCredit: 0, netBalance: 0 };
+
+    const items = unitItems.filter((i) => i.unitId === rawUnit.id);
+    const unit = { ...rawUnit, items };
 
     let running = 0;
     const rows = transactions
@@ -209,10 +230,14 @@ export default function App() {
         return { ...r, runningBalance: running };
       });
 
-    const totalDebt = rows.reduce((s, r) => s + (Number(r.debt) || 0), 0);
-    const totalCredit = rows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+    const txDebt = rows.reduce((s, r) => s + (Number(r.debt) || 0), 0);
+    const txCredit = rows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+    const itemsDebt = items.reduce((s, i) => s + (Number(i.debt) || 0), 0);
+    const itemsPaid = items.reduce((s, i) => s + (Number(i.paid) || 0), 0);
+    const totalDebt = items.length > 0 ? itemsDebt : txDebt;
+    const totalCredit = items.length > 0 ? itemsPaid : txCredit;
     return { unit, rows, totalDebt, totalCredit, netBalance: totalDebt - totalCredit };
-  }, [units, transactions, statementUnitId, isUnitObserver, currentUser]);
+  }, [units, unitItems, transactions, statementUnitId, isUnitObserver, currentUser]);
 
   // --- OTURUM İŞLEMLERİ ---
   const handleLogin = async (username, password, otpCode = '') => {
@@ -282,8 +307,45 @@ export default function App() {
     try {
       await api.units.remove(unit.id);
       setUnits((prev) => prev.filter((u) => u.id !== unit.id));
+      setUnitItems((prev) => prev.filter((i) => i.unitId !== unit.id));
       setTransactions((prev) => prev.filter((t) => t.unitId !== unit.id));
       notify('Cari / Birim kaldırıldı.');
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  // --- CARİ KALEM İŞLEMLERİ (KUMANYA, KANDİL SİMİDİ, PATATES -> BORÇ / ÖDENEN / KALAN) ---
+  const handleCreateUnitItem = async (data) => {
+    try {
+      const created = await api.unitItems.create(data);
+      setUnitItems((prev) => [...prev, created]);
+      notify(`"${created.name}" kalemi eklendi.`);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleUpdateUnitItem = async (id, patch) => {
+    try {
+      const updated = await api.unitItems.update(id, patch);
+      setUnitItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+      notify(`"${updated.name}" kalemi güncellendi.`);
+      return true;
+    } catch (err) {
+      handleError(err);
+      return false;
+    }
+  };
+
+  const handleDeleteUnitItem = async (item) => {
+    if (!window.confirm(`"${item.name}" kalemi silinecek. Emin misiniz?`)) return;
+    try {
+      await api.unitItems.remove(item.id);
+      setUnitItems((prev) => prev.filter((i) => i.id !== item.id));
+      notify('Kalem silindi.');
     } catch (err) {
       handleError(err);
     }
@@ -637,6 +699,9 @@ export default function App() {
               setStatementUnitId(id);
               setActiveTab('statement');
             }}
+            onCreateItem={handleCreateUnitItem}
+            onUpdateItem={handleUpdateUnitItem}
+            onDeleteItem={handleDeleteUnitItem}
           />
         )}
 
@@ -663,9 +728,13 @@ export default function App() {
           <StatementTab
             report={statementReport}
             units={units}
+            isAdmin={isAdmin}
             isUnitObserver={isUnitObserver}
             statementUnitId={statementUnitId}
             onSelectUnit={setStatementUnitId}
+            onCreateItem={handleCreateUnitItem}
+            onUpdateItem={handleUpdateUnitItem}
+            onDeleteItem={handleDeleteUnitItem}
           />
         )}
 

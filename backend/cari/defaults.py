@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.db import transaction as db_transaction
 
-from .models import SecurityAuditLog, Transaction, Unit, User
+from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
 from .security import WEAK_PASSWORDS, encrypt_sensitive
 
 ADMIN_NAME = 'Silivri Serhendi Baş Yönetici'
@@ -17,6 +17,34 @@ DEFAULT_UNITS = [
     ('BRM-06', 'Gümüşyaka Dergah', 'İbrahim Yıldız', '0532 106 06 06'),
     ('BRM-07', 'Danamandıra Dergah', 'Ömer Aydın', '0532 107 07 07'),
     ('BRM-08', 'Silivri il heyeti', 'Yusuf Arslan', '0532 108 08 08'),
+]
+
+# Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, borç, ödenen)
+DEFAULT_UNIT_ITEMS = [
+    ('KLM-0101', 'BRM-01', 'Kumanya', 80000, 55000),
+    ('KLM-0102', 'BRM-01', 'Kandil Simidi', 35000, 25000),
+    ('KLM-0103', 'BRM-01', 'Patates', 30000, 15000),
+    ('KLM-0104', 'BRM-02', 'Kumanya', 50000, 30000),
+    ('KLM-0105', 'BRM-02', 'Kandil Simidi', 20000, 12000),
+    ('KLM-0106', 'BRM-02', 'Patates', 18000, 8000),
+    ('KLM-0107', 'BRM-03', 'Kumanya', 42000, 0),
+    ('KLM-0108', 'BRM-03', 'Kandil Simidi', 18000, 0),
+    ('KLM-0109', 'BRM-03', 'Patates', 12000, 0),
+    ('KLM-0110', 'BRM-04', 'Kumanya', 54000, 54000),
+    ('KLM-0111', 'BRM-04', 'Kandil Simidi', 22000, 22000),
+    ('KLM-0112', 'BRM-04', 'Patates', 18000, 18000),
+    ('KLM-0113', 'BRM-05', 'Kumanya', 35000, 0),
+    ('KLM-0114', 'BRM-05', 'Kandil Simidi', 15000, 0),
+    ('KLM-0115', 'BRM-05', 'Patates', 11500, 0),
+    ('KLM-0116', 'BRM-06', 'Kumanya', 45000, 25000),
+    ('KLM-0117', 'BRM-06', 'Kandil Simidi', 20000, 10000),
+    ('KLM-0118', 'BRM-06', 'Patates', 18000, 8000),
+    ('KLM-0119', 'BRM-07', 'Kumanya', 30000, 0),
+    ('KLM-0120', 'BRM-07', 'Kandil Simidi', 14000, 0),
+    ('KLM-0121', 'BRM-07', 'Patates', 10000, 0),
+    ('KLM-0122', 'BRM-08', 'Kumanya', 120000, 90000),
+    ('KLM-0123', 'BRM-08', 'Kandil Simidi', 50000, 35000),
+    ('KLM-0124', 'BRM-08', 'Patates', 40000, 25000),
 ]
 
 # (id, tarih, birim, tür, açıklama, borç, alacak)
@@ -57,10 +85,20 @@ DEFAULT_USERS = [
 def load_defaults():
     """Birimleri ve hareketleri sıfırlar, rol hiyerarşisine uygun güvenli şifreli kullanıcıları yükler."""
     Transaction.objects.all().delete()
+    UnitItem.objects.all().delete()
     Unit.objects.all().delete()
 
     for uid, name, contact, phone in DEFAULT_UNITS:
         Unit.objects.create(id=uid, name=name, contact=contact, phone=encrypt_sensitive(phone))
+
+    for iid, unit_id, iname, debt, paid in DEFAULT_UNIT_ITEMS:
+        UnitItem.objects.create(
+            id=iid,
+            unit_id=unit_id,
+            name=iname,
+            debt=Decimal(debt),
+            paid=Decimal(paid),
+        )
 
     prev_hash = 'GENESIS'
     for tid, date, unit_id, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:

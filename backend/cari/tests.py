@@ -234,3 +234,32 @@ class OwaspTop10SecurityTests(TestCase):
             format='json',
         )
         self.assertEqual(ynt_pwd.status_code, 200)
+
+    def test_13_unit_items_crud_and_remaining_calculation(self):
+        """Cari içindeki kalemler (Kumanya, Kandil Simidi, Patates -> Borç / Ödenen / Kalan) eklenip silinebilir."""
+        res = self.client.post('/api/auth/login/', {'username': 'admin', 'password': 'Serhendi!Admin26'}, format='json')
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {res.data['token']}")
+
+        # Gümüşyaka Dergah (BRM-06) kalemlerini listele
+        list_res = self.client.get('/api/unit-items/?unit=BRM-06')
+        self.assertEqual(list_res.status_code, 200)
+        self.assertGreaterEqual(len(list_res.data), 3)
+
+        # Yeni kalem ekle
+        create_res = self.client.post(
+            '/api/unit-items/',
+            {'unitId': 'BRM-06', 'name': 'Kurban', 'debt': '25000.00', 'paid': '10000.00'},
+            format='json',
+        )
+        self.assertEqual(create_res.status_code, 201)
+        self.assertEqual(float(create_res.data['remaining']), 15000.0)
+
+        # Kalemi güncelle
+        item_id = create_res.data['id']
+        patch_res = self.client.patch(f'/api/unit-items/{item_id}/', {'paid': '20000.00'}, format='json')
+        self.assertEqual(patch_res.status_code, 200)
+        self.assertEqual(float(patch_res.data['remaining']), 5000.0)
+
+        # Kalemi sil
+        del_res = self.client.delete(f'/api/unit-items/{item_id}/')
+        self.assertEqual(del_res.status_code, 204)

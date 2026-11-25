@@ -17,7 +17,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .defaults import load_defaults
-from .models import SecurityAuditLog, Transaction, Unit, User
+from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
 from .permissions import IsAdminRole, IsAdminRoleOrReadOnly
 from .security import (
     ALLOWED_EXTERNAL_DOMAINS,
@@ -36,6 +36,7 @@ from .serializers import (
     PasswordSerializer,
     SecurityAuditLogSerializer,
     TransactionSerializer,
+    UnitItemSerializer,
     UnitSerializer,
     UserSerializer,
 )
@@ -308,6 +309,57 @@ class UnitViewSet(viewsets.ModelViewSet):
             request=self.request,
             user=self.request.user,
             description=f'Cari/birim ve bağlı hareketleri silindi: {uid} - {uname}.',
+        )
+
+
+# --- CARİ KALEMLERİ (Kumanya, Kandil Simidi, Patates -> Borç / Ödenen / Kalan) ---
+class UnitItemViewSet(viewsets.ModelViewSet):
+    serializer_class = UnitItemSerializer
+    permission_classes = [IsAdminRoleOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+        requested_unit = self.request.query_params.get('unit')
+        if (
+            user.effective_role == User.Role.VIEWER_UNIT
+            and requested_unit
+            and requested_unit != user.unit_id
+        ):
+            return UnitItem.objects.none()
+        qs = _restrict_to_user_unit(UnitItem.objects.select_related('unit'), user, 'unit_id')
+        if requested_unit:
+            qs = qs.filter(unit_id=requested_unit)
+        return qs
+
+    def perform_create(self, serializer):
+        item = serializer.save()
+        log_security_event(
+            action='UNIT_ITEM_CREATED',
+            severity='INFO',
+            request=self.request,
+            user=self.request.user,
+            description=f'Cari kalemi eklendi: {item.unit_id} - {item.name} (Borç: {item.debt}, Ödenen: {item.paid}).',
+        )
+
+    def perform_update(self, serializer):
+        item = serializer.save()
+        log_security_event(
+            action='UNIT_ITEM_UPDATED',
+            severity='INFO',
+            request=self.request,
+            user=self.request.user,
+            description=f'Cari kalemi güncellendi: {item.unit_id} - {item.name} (Borç: {item.debt}, Ödenen: {item.paid}).',
+        )
+
+    def perform_destroy(self, instance):
+        uid, iname = instance.unit_id, instance.name
+        instance.delete()
+        log_security_event(
+            action='UNIT_ITEM_DELETED',
+            severity='WARNING',
+            request=self.request,
+            user=self.request.user,
+            description=f'Cari kalemi silindi: {uid} - {iname}.',
         )
 
 

@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import SecurityAuditLog, Transaction, Unit, User
+from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
 from .security import (
     compute_transaction_hash,
     sanitize_text_input,
@@ -50,8 +50,32 @@ class UnitSerializer(serializers.ModelSerializer):
         return sanitize_text_input(value, 'Telefon numarası', neutralize_csv=False) or '-'
 
 
+class UnitItemSerializer(serializers.ModelSerializer):
+    unitId = serializers.PrimaryKeyRelatedField(source='unit', queryset=Unit.objects.all())
+    remaining = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnitItem
+        fields = ['id', 'unitId', 'name', 'debt', 'paid', 'remaining']
+        read_only_fields = ['id', 'remaining']
+        extra_kwargs = {
+            'debt': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
+            'paid': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
+        }
+
+    def get_remaining(self, obj):
+        return (obj.debt or Decimal('0')) - (obj.paid or Decimal('0'))
+
+    def validate_name(self, value):
+        val = sanitize_text_input(value, 'Kalem adı')
+        if not val:
+            raise serializers.ValidationError('Kalem adı boş bırakılamaz (Örn: Kumanya, Kandil Simidi, Patates).')
+        return val
+
+
 class TransactionSerializer(serializers.ModelSerializer):
     unitId = serializers.PrimaryKeyRelatedField(source='unit', queryset=Unit.objects.all())
+    category = serializers.CharField(required=False, allow_blank=True, default='Genel')
     createdBy = serializers.CharField(source='created_by', read_only=True)
     documentUrl = serializers.CharField(source='document_url', required=False, allow_blank=True, default='')
     integrityHash = serializers.CharField(source='integrity_hash', read_only=True)
@@ -72,6 +96,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id',
             'date',
             'unitId',
+            'category',
             'type',
             'description',
             'debt',
@@ -91,6 +116,9 @@ class TransactionSerializer(serializers.ModelSerializer):
     def get_integrityVerified(self, obj):
         expected = compute_transaction_hash(obj, obj.prev_hash or 'GENESIS')
         return bool(obj.integrity_hash and obj.integrity_hash == expected)
+
+    def validate_category(self, value):
+        return sanitize_text_input(value, 'Kalem / Kategori') or 'Genel'
 
     def validate_description(self, value):
         return sanitize_text_input(value, 'Açıklama')

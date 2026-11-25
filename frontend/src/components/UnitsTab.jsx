@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { IconEdit, IconGrid, IconPlus, IconSearch, IconTable, IconTrash } from '../icons.jsx';
+import { Fragment, useState } from 'react';
+import { IconCheck, IconEdit, IconGrid, IconPlus, IconSearch, IconTable, IconTrash } from '../icons.jsx';
 import { formatTRY, primaryBtn } from '../constants.js';
 
 const balanceBadge = (n) =>
   n > 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-[#0f6b36] border-emerald-200';
+
+const PRESET_ITEM_NAMES = ['Kumanya', 'Kandil Simidi', 'Patates', 'Kurban', 'Takvim / Dergi', 'Genel'];
 
 export default function UnitsTab({
   units,
@@ -18,10 +20,28 @@ export default function UnitsTab({
   onEditUnit,
   onQuickSave,
   onDeleteUnit,
-  onShowStatement
+  onShowStatement,
+  onCreateItem,
+  onUpdateItem,
+  onDeleteItem
 }) {
   // Satır/Kart içi hızlı cari adı & telefon düzenleme durumu
   const [quick, setQuick] = useState(null);
+  // Hangi carilerin kalem listesi açık (varsayılan: ilk cari veya birim gözlemcisinin carisi açık)
+  const [expandedIds, setExpandedIds] = useState({});
+  // Yeni kalem ekleme formları: { [unitId]: { name, debt, paid } }
+  const [newItemForms, setNewItemForms] = useState({});
+  // Mevcut kalemi düzenleme durumu: { id, name, debt, paid }
+  const [editItem, setEditItem] = useState(null);
+
+  const isExpanded = (uid) => {
+    if (isUnitObserver) return true;
+    return Boolean(expandedIds[uid]);
+  };
+
+  const toggleExpand = (uid) => {
+    setExpandedIds((prev) => ({ ...prev, [uid]: !prev[uid] }));
+  };
 
   const startQuick = (u) => {
     if (!isAdmin) return;
@@ -37,17 +57,270 @@ export default function UnitsTab({
 
   const onEnter = (e) => e.key === 'Enter' && saveQuick();
 
+  const getNewForm = (uid) => newItemForms[uid] || { name: '', debt: '', paid: '' };
+  const setNewForm = (uid, patch) => {
+    setNewItemForms((prev) => ({
+      ...prev,
+      [uid]: { ...(prev[uid] || { name: '', debt: '', paid: '' }), ...patch }
+    }));
+  };
+
+  const handleAddItem = async (e, unitId) => {
+    e.preventDefault();
+    const f = getNewForm(unitId);
+    if (!f.name.trim()) return;
+    const ok = await onCreateItem?.({
+      unitId,
+      name: f.name.trim(),
+      debt: Math.max(0, parseFloat(f.debt) || 0).toFixed(2),
+      paid: Math.max(0, parseFloat(f.paid) || 0).toFixed(2)
+    });
+    if (ok) {
+      setNewItemForms((prev) => ({ ...prev, [unitId]: { name: '', debt: '', paid: '' } }));
+    }
+  };
+
+  const handleSaveEditItem = async (e) => {
+    e?.preventDefault?.();
+    if (!editItem || !editItem.name.trim()) return;
+    const ok = await onUpdateItem?.(editItem.id, {
+      name: editItem.name.trim(),
+      debt: Math.max(0, parseFloat(editItem.debt) || 0).toFixed(2),
+      paid: Math.max(0, parseFloat(editItem.paid) || 0).toFixed(2)
+    });
+    if (ok) setEditItem(null);
+  };
+
+  const renderUnitItemsPanel = (u) => {
+    const items = u.items || [];
+    const form = getNewForm(u.id);
+
+    return (
+      <div className="p-3.5 sm:p-4 bg-slate-50/90 border-t border-slate-200 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+              {u.name} — Kalem Kalem Borç Listesi ({items.length} Kalem)
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Kumanya, Kandil Simidi, Patates vb. kalemlerin ayrı ayrı Borç, Ödenen ve Kalan tutarları
+            </p>
+          </div>
+          {isAdmin && (
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[11px] font-semibold text-slate-400 mr-1">Hızlı Seç:</span>
+              {PRESET_ITEM_NAMES.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setNewForm(u.id, { name: preset })}
+                  className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white border border-slate-200 text-slate-700 hover:border-[#0f6b36] hover:text-[#0f6b36] cursor-pointer"
+                >
+                  + {preset}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* KALEM KARTLARI / TABLOSU (BORÇ - ÖDENEN - KALAN) */}
+        {items.length === 0 ? (
+          <div className="p-4 rounded-xl bg-white border border-slate-200 text-center text-xs text-slate-500">
+            Bu cari için henüz kalem eklenmemiş.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {items.map((item) => {
+              const debt = Number(item.debt) || 0;
+              const paid = Number(item.paid) || 0;
+              const rem = debt - paid;
+              const isEditingThis = isAdmin && editItem?.id === item.id;
+
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex flex-col justify-between gap-2.5"
+                >
+                  {isEditingThis ? (
+                    <form onSubmit={handleSaveEditItem} className="space-y-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">Kalem Adı</label>
+                        <input
+                          type="text"
+                          required
+                          autoFocus
+                          value={editItem.name}
+                          onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
+                          className="w-full px-2.5 py-1 text-xs font-bold border border-[#0f6b36] rounded-lg bg-white"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-rose-600 uppercase">Borç (₺)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editItem.debt}
+                            onChange={(e) => setEditItem({ ...editItem, debt: e.target.value })}
+                            className="w-full px-2 py-1 text-xs font-semibold border border-slate-300 rounded-lg bg-white tabular-nums"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#0f6b36] uppercase">Ödenen (₺)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editItem.paid}
+                            onChange={(e) => setEditItem({ ...editItem, paid: e.target.value })}
+                            className="w-full px-2 py-1 text-xs font-semibold border border-slate-300 rounded-lg bg-white tabular-nums"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 pt-1">
+                        <button
+                          type="submit"
+                          className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] text-white cursor-pointer"
+                        >
+                          Kaydet
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditItem(null)}
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 cursor-pointer"
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <span className="text-sm font-extrabold text-slate-900">{item.name}</span>
+                        {isAdmin && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setEditItem({ id: item.id, name: item.name, debt, paid })}
+                              className="p-1 rounded-md text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                              title="Kalemi Düzenle"
+                            >
+                              <IconEdit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteItem?.(item)}
+                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                              title="Kalemi Sil"
+                            >
+                              <IconTrash className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* BORÇ | ÖDENEN | KALAN (Kağıttaki Şablon Görünümü) */}
+                      <div className="grid grid-cols-3 gap-1.5 text-center">
+                        <div
+                          onClick={() => isAdmin && setEditItem({ id: item.id, name: item.name, debt, paid })}
+                          className={`p-2 rounded-lg bg-rose-50/70 border border-rose-100 ${isAdmin ? 'cursor-pointer hover:border-rose-300' : ''}`}
+                        >
+                          <div className="text-[10px] font-bold uppercase text-rose-700">Borç</div>
+                          <div className="text-xs font-extrabold text-rose-600 tabular-nums mt-0.5">{formatTRY(debt)}</div>
+                        </div>
+                        <div
+                          onClick={() => isAdmin && setEditItem({ id: item.id, name: item.name, debt, paid })}
+                          className={`p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 ${isAdmin ? 'cursor-pointer hover:border-emerald-300' : ''}`}
+                        >
+                          <div className="text-[10px] font-bold uppercase text-[#0f6b36]">Ödenen</div>
+                          <div className="text-xs font-extrabold text-[#0f6b36] tabular-nums mt-0.5">{formatTRY(paid)}</div>
+                        </div>
+                        <div
+                          onClick={() => isAdmin && setEditItem({ id: item.id, name: item.name, debt, paid })}
+                          className={`p-2 rounded-lg bg-slate-100 border border-slate-200 ${isAdmin ? 'cursor-pointer hover:border-slate-300' : ''}`}
+                        >
+                          <div className="text-[10px] font-bold uppercase text-slate-600">Kalan</div>
+                          <div
+                            className={`text-xs font-black tabular-nums mt-0.5 ${
+                              rem > 0 ? 'text-rose-700' : 'text-[#0f6b36]'
+                            }`}
+                          >
+                            {formatTRY(rem)}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* YENİ KALEM EKLEME SATIRI (YÖNETİCİ / ADMİN) */}
+        {isAdmin && (
+          <form
+            onSubmit={(e) => handleAddItem(e, u.id)}
+            className="p-3 rounded-xl bg-white border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-2 items-end"
+          >
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Yeni Kalem Adı</label>
+              <input
+                type="text"
+                required
+                placeholder="Örn: Kumanya, Kandil Simidi..."
+                value={form.name}
+                onChange={(e) => setNewForm(u.id, { name: e.target.value })}
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-rose-700 mb-1">Borç (₺)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.debt}
+                onChange={(e) => setNewForm(u.id, { debt: e.target.value })}
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums focus:outline-none focus:border-[#0f6b36]"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-[#0f6b36] mb-1">Ödenen (₺)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.paid}
+                onChange={(e) => setNewForm(u.id, { paid: e.target.value })}
+                className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums focus:outline-none focus:border-[#0f6b36]"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
+            >
+              <IconPlus className="w-3.5 h-3.5" />
+              Kalem Ekle
+            </button>
+          </form>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
       {/* Başlık & araçlar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 border-b border-slate-100">
         <div>
-          <h2 className="text-base font-extrabold text-slate-900">Cariler, Telefonlar & Güncel Bakiyeler</h2>
-          {isAdmin && (
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cari adı veya telefon numarasına tıklayarak ya da Düzenle butonuyla anında değiştirebilirsiniz.
-            </p>
-          )}
+          <h2 className="text-base font-extrabold text-slate-900">Cariler, Kalem Listeleri & Güncel Bakiyeler</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Her carinin yanındaki <b>"Kalemler"</b> butonuna tıklayarak Kumanya, Kandil Simidi, Patates gibi kalemlerin <b>Borç / Ödenen / Kalan</b> listesini açıp yönetebilirsiniz.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex p-1 rounded-lg bg-slate-100">
@@ -76,7 +349,7 @@ export default function UnitsTab({
               <IconSearch className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari, yetkili veya tel ara..."
+                placeholder="Cari, kalem veya tel ara..."
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 className="pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0f6b36]"
@@ -113,134 +386,153 @@ export default function UnitsTab({
                 <th className="py-2.5 px-4 font-bold">Yetkili</th>
                 <th className="py-2.5 px-4 font-bold">Telefon Numarası</th>
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Borç (₺)</th>
-                <th className="py-2.5 px-4 font-bold text-right">Toplam Alacak (₺)</th>
-                <th className="py-2.5 px-4 font-bold text-right">Net Bakiye (₺)</th>
-                <th className="py-2.5 px-4 font-bold">Son İşlem</th>
+                <th className="py-2.5 px-4 font-bold text-right">Toplam Ödenen (₺)</th>
+                <th className="py-2.5 px-4 font-bold text-right">Kalan Bakiye (₺)</th>
                 <th className="py-2.5 px-4 font-bold text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {units.map((u) => {
                 const editing = isAdmin && quick?.id === u.id;
+                const open = isExpanded(u.id);
+                const itemCount = (u.items || []).length;
                 return (
-                  <tr key={u.id} className={editing ? 'bg-amber-50/50' : 'hover:bg-slate-50/70'}>
-                    <td className="py-3 px-4 min-w-[200px]">
-                      {editing ? (
-                        <input
-                          type="text"
-                          autoFocus
-                          value={quick.name}
-                          onChange={(e) => setQuick({ ...quick, name: e.target.value })}
-                          onKeyDown={onEnter}
-                          placeholder="Cari / Birim Adı"
-                          className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
-                        />
-                      ) : (
-                        <div
-                          onClick={() => startQuick(u)}
-                          className={isAdmin ? 'cursor-pointer group' : ''}
-                          title={isAdmin ? 'Cari adını düzenlemek için tıklayın' : ''}
-                        >
-                          <div className="font-bold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">{u.name}</div>
-                          <div className="text-[11px] text-slate-400 font-semibold">
-                            {u.id} • {u.txCount} hareket
+                  <Fragment key={u.id}>
+                    <tr className={editing ? 'bg-amber-50/50' : open ? 'bg-emerald-50/30' : 'hover:bg-slate-50/70'}>
+                      <td className="py-3 px-4 min-w-[200px]">
+                        {editing ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            value={quick.name}
+                            onChange={(e) => setQuick({ ...quick, name: e.target.value })}
+                            onKeyDown={onEnter}
+                            placeholder="Cari / Birim Adı"
+                            className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
+                          />
+                        ) : (
+                          <div
+                            onClick={() => toggleExpand(u.id)}
+                            className="cursor-pointer group"
+                            title="Kalem listesini açmak / kapatmak için tıklayın"
+                          >
+                            <div className="font-bold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">{u.name}</div>
+                            <div className="text-[11px] text-slate-400 font-semibold">
+                              {u.id} • {itemCount} kalem • {u.txCount} hareket
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-slate-700 text-xs min-w-[140px]">
-                      {editing ? (
-                        <input
-                          type="text"
-                          value={quick.contact}
-                          onChange={(e) => setQuick({ ...quick, contact: e.target.value })}
-                          onKeyDown={onEnter}
-                          placeholder="Yetkili Adı"
-                          className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"
-                        />
-                      ) : (
-                        u.contact
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-700 tabular-nums whitespace-nowrap min-w-[140px]">
-                      {editing ? (
-                        <input
-                          type="tel"
-                          value={quick.phone}
-                          onChange={(e) => setQuick({ ...quick, phone: e.target.value })}
-                          onKeyDown={onEnter}
-                          placeholder="05xx xxx xx xx"
-                          className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white focus:outline-none tabular-nums"
-                        />
-                      ) : (
-                        <span
-                          onClick={() => startQuick(u)}
-                          className={`inline-flex items-center gap-1.5 font-semibold ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36] hover:underline' : ''}`}
-                          title={isAdmin ? 'Telefon numarasını düzenlemek için tıklayın' : ''}
-                        >
-                          {u.phone}
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 text-xs min-w-[130px]">
+                        {editing ? (
+                          <input
+                            type="text"
+                            value={quick.contact}
+                            onChange={(e) => setQuick({ ...quick, contact: e.target.value })}
+                            onKeyDown={onEnter}
+                            placeholder="Yetkili Adı"
+                            className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"
+                          />
+                        ) : (
+                          u.contact
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-700 tabular-nums whitespace-nowrap min-w-[130px]">
+                        {editing ? (
+                          <input
+                            type="tel"
+                            value={quick.phone}
+                            onChange={(e) => setQuick({ ...quick, phone: e.target.value })}
+                            onKeyDown={onEnter}
+                            placeholder="05xx xxx xx xx"
+                            className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white focus:outline-none tabular-nums"
+                          />
+                        ) : (
+                          <span
+                            onClick={() => startQuick(u)}
+                            className={`inline-flex items-center gap-1.5 font-semibold ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36] hover:underline' : ''}`}
+                            title={isAdmin ? 'Telefon numarasını düzenlemek için tıklayın' : ''}
+                          >
+                            {u.phone}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-semibold text-rose-600 tabular-nums whitespace-nowrap">{formatTRY(u.totalDebt)}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-[#0f6b36] tabular-nums whitespace-nowrap">{formatTRY(u.totalCredit)}</td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-extrabold border tabular-nums ${balanceBadge(u.netBalance)}`}>
+                          {formatTRY(u.netBalance)}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-rose-600 tabular-nums whitespace-nowrap">{formatTRY(u.totalDebt)}</td>
-                    <td className="py-3 px-4 text-right font-semibold text-[#0f6b36] tabular-nums whitespace-nowrap">{formatTRY(u.totalCredit)}</td>
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-extrabold border tabular-nums ${balanceBadge(u.netBalance)}`}>
-                        {formatTRY(u.netBalance)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">{u.lastTxDate}</td>
-                    <td className="py-3 px-4">
-                      {editing ? (
-                        <div className="flex justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={saveQuick}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
-                          >
-                            Kaydet
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setQuick(null)}
-                            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                          >
-                            İptal
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-end items-center gap-1.5">
-                          <button
-                            onClick={() => onShowStatement(u.id)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-[#0f6b36] hover:text-white text-slate-800 transition cursor-pointer whitespace-nowrap"
-                          >
-                            Ekstre Gör
-                          </button>
-                          {isAdmin && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => onEditUnit(u)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 cursor-pointer"
-                                title="Cari Adı ve Telefonu Düzenle"
-                              >
-                                <IconEdit className="w-3.5 h-3.5" />
-                                Düzenle
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onDeleteUnit(u)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
-                                title="Cariyi Sil"
-                              >
-                                <IconTrash />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="py-3 px-4">
+                        {editing ? (
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={saveQuick}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
+                            >
+                              Kaydet
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setQuick(null)}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                            >
+                              İptal
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(u.id)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer whitespace-nowrap ${
+                                open
+                                  ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
+                                  : 'bg-emerald-50 text-[#0f6b36] border-emerald-200 hover:bg-emerald-100'
+                              }`}
+                            >
+                              Kalemler ({itemCount})
+                            </button>
+                            <button
+                              onClick={() => onShowStatement(u.id)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer whitespace-nowrap"
+                            >
+                              Ekstre
+                            </button>
+                            {isAdmin && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => onEditUnit(u)}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                                  title="Cari Bilgilerini Düzenle"
+                                >
+                                  <IconEdit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onDeleteUnit(u)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                                  title="Cariyi Sil"
+                                >
+                                  <IconTrash />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr>
+                        <td colSpan={7} className="p-0">
+                          {renderUnitItemsPanel(u)}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -249,102 +541,130 @@ export default function UnitsTab({
       )}
 
       {units.length > 0 && viewMode === 'grid' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           {units.map((u) => {
             const editing = isAdmin && quick?.id === u.id;
+            const open = isExpanded(u.id);
+            const itemCount = (u.items || []).length;
             return (
-              <div key={u.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 hover:shadow-md transition">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-2">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{u.id}</span>
-                  <span>{u.lastTxDate}</span>
-                </div>
+              <div key={u.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+                <div className="p-4 flex flex-col flex-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{u.id}</span>
+                    <span>{itemCount} kalem</span>
+                  </div>
 
-                {editing ? (
-                  <form onSubmit={saveQuick} className="space-y-2 mb-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-500 mb-0.5">Cari / Birim Adı</label>
-                      <input
-                        type="text"
-                        autoFocus
-                        value={quick.name}
-                        onChange={(e) => setQuick({ ...quick, name: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-500 mb-0.5">Telefon Numarası</label>
-                      <input
-                        type="tel"
-                        value={quick.phone}
-                        onChange={(e) => setQuick({ ...quick, phone: e.target.value })}
-                        className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white tabular-nums focus:outline-none"
-                      />
-                    </div>
-                    <div className="flex gap-1.5">
-                      <button type="submit" className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] text-white cursor-pointer">
-                        Kaydet
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setQuick(null)}
-                        className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 cursor-pointer"
+                  {editing ? (
+                    <form onSubmit={saveQuick} className="space-y-2 mb-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-0.5">Cari / Birim Adı</label>
+                        <input
+                          type="text"
+                          autoFocus
+                          value={quick.name}
+                          onChange={(e) => setQuick({ ...quick, name: e.target.value })}
+                          className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 mb-0.5">Telefon Numarası</label>
+                        <input
+                          type="tel"
+                          value={quick.phone}
+                          onChange={(e) => setQuick({ ...quick, phone: e.target.value })}
+                          className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white tabular-nums focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button type="submit" className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] text-white cursor-pointer">
+                          Kaydet
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQuick(null)}
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 cursor-pointer"
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="mb-3">
+                      <div
+                        onClick={() => startQuick(u)}
+                        className={`text-base font-extrabold text-slate-900 ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36]' : ''}`}
                       >
-                        İptal
-                      </button>
+                        {u.name}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-0.5">{u.contact} • {u.phone}</div>
                     </div>
-                  </form>
-                ) : (
-                  <div className="mb-3">
-                    <div
-                      onClick={() => startQuick(u)}
-                      className={`text-base font-extrabold text-slate-900 ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36]' : ''}`}
-                    >
-                      {u.name}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-0.5">{u.contact}</div>
-                    <div
-                      onClick={() => startQuick(u)}
-                      className={`text-xs font-semibold text-slate-700 tabular-nums mt-0.5 ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36]' : ''}`}
-                    >
-                      {u.phone}
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="space-y-1.5 text-xs border-t border-slate-100 pt-3 mt-auto">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Toplam Borç:</span>
-                    <span className="font-bold text-rose-600 tabular-nums">{formatTRY(u.totalDebt)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Toplam Alacak:</span>
-                    <span className="font-bold text-[#0f6b36] tabular-nums">{formatTRY(u.totalCredit)}</span>
-                  </div>
-                  <div className="flex justify-between pt-1.5 border-t border-dashed border-slate-200">
-                    <span className="font-bold text-slate-700">Net Bakiye:</span>
-                    <span className={`font-black tabular-nums ${u.netBalance > 0 ? 'text-rose-600' : 'text-[#0f6b36]'}`}>
-                      {formatTRY(u.netBalance)}
-                    </span>
-                  </div>
-                </div>
+                  {/* KART İÇİNDE KALEM ÖZET LİSTESİ (KUMANYA / KANDİL SİMİDİ / PATATES) */}
+                  {(u.items || []).length > 0 && (
+                    <div className="mb-3 space-y-1.5 border-t border-slate-100 pt-2.5">
+                      {(u.items || []).map((item) => {
+                        const d = Number(item.debt) || 0;
+                        const p = Number(item.paid) || 0;
+                        const r = d - p;
+                        return (
+                          <div key={item.id} className="p-2 rounded-xl bg-slate-50 border border-slate-200/70 text-xs">
+                            <div className="font-bold text-slate-800 mb-1">{item.name}</div>
+                            <div className="grid grid-cols-3 gap-1 text-[11px] tabular-nums">
+                              <div>
+                                <span className="text-slate-400">Borç: </span>
+                                <span className="font-bold text-rose-600">{formatTRY(d)}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Ödenen: </span>
+                                <span className="font-bold text-[#0f6b36]">{formatTRY(p)}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Kalan: </span>
+                                <span className={`font-extrabold ${r > 0 ? 'text-rose-700' : 'text-[#0f6b36]'}`}>{formatTRY(r)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={() => onShowStatement(u.id)}
-                    className="flex-1 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-[#0f6b36] hover:text-white text-slate-800 transition cursor-pointer"
-                  >
-                    Cari Ekstre Aç
-                  </button>
-                  {isAdmin && !editing && (
+                  <div className="space-y-1.5 text-xs border-t border-slate-100 pt-3 mt-auto">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Toplam Borç:</span>
+                      <span className="font-bold text-rose-600 tabular-nums">{formatTRY(u.totalDebt)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Toplam Ödenen:</span>
+                      <span className="font-bold text-[#0f6b36] tabular-nums">{formatTRY(u.totalCredit)}</span>
+                    </div>
+                    <div className="flex justify-between pt-1.5 border-t border-dashed border-slate-200">
+                      <span className="font-bold text-slate-700">Kalan Bakiye:</span>
+                      <span className={`font-black tabular-nums ${u.netBalance > 0 ? 'text-rose-600' : 'text-[#0f6b36]'}`}>
+                        {formatTRY(u.netBalance)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
                     <button
                       type="button"
-                      onClick={() => onEditUnit(u)}
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 cursor-pointer"
+                      onClick={() => toggleExpand(u.id)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-[#0f6b36] border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
                     >
-                      Düzenle
+                      {open ? 'Kalemleri Gizle' : `Kalem Ekle / Düzenle (${itemCount})`}
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => onShowStatement(u.id)}
+                      className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 cursor-pointer"
+                    >
+                      Ekstre
+                    </button>
+                  </div>
                 </div>
+                {open && renderUnitItemsPanel(u)}
               </div>
             );
           })}

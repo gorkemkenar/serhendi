@@ -106,6 +106,13 @@ export const api = {
     remove: (id) => request(`/units/${encodeURIComponent(id)}/`, { method: 'DELETE' })
   },
 
+  unitItems: {
+    list: () => request('/unit-items/'),
+    create: (data) => request('/unit-items/', { method: 'POST', body: data }),
+    update: (id, data) => request(`/unit-items/${encodeURIComponent(id)}/`, { method: 'PATCH', body: data }),
+    remove: (id) => request(`/unit-items/${encodeURIComponent(id)}/`, { method: 'DELETE' })
+  },
+
   transactions: {
     list: () => request('/transactions/'),
     create: (data) => request('/transactions/', { method: 'POST', body: data }),

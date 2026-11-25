@@ -5,6 +5,7 @@ from . import views
 
 router = DefaultRouter()
 router.register('units', views.UnitViewSet, basename='unit')
+router.register('unit-items', views.UnitItemViewSet, basename='unit-item')
 router.register('transactions', views.TransactionViewSet, basename='transaction')
 router.register('users', views.UserViewSet, basename='user')
 

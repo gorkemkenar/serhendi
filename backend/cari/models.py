@@ -129,6 +129,34 @@ class User(AbstractUser):
         return self.full_name or self.username
 
 
+class UnitItem(models.Model):
+    """Cari içindeki kalem bazlı borç takibi (Örn: Kumanya, Kandil Simidi, Patates -> Borç / Ödenen / Kalan)."""
+
+    id = models.CharField('Kalem Kodu', max_length=20, primary_key=True, editable=False)
+    unit = models.ForeignKey(Unit, verbose_name='Cari / Birim', on_delete=models.CASCADE, related_name='items')
+    name = models.CharField('Kalem Adı', max_length=150)
+    debt = models.DecimalField('Borç (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    paid = models.DecimalField('Ödenen (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        verbose_name = 'Cari Kalemi'
+        verbose_name_plural = 'Cari Kalemleri'
+
+    def __str__(self):
+        return f'{self.unit_id} - {self.name}'
+
+    @property
+    def remaining(self):
+        return (self.debt or 0) - (self.paid or 0)
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.id = _next_code(UnitItem, 'KLM-', 4, 101)
+        super().save(*args, **kwargs)
+
+
 class Transaction(models.Model):
     class Type(models.TextChoices):
         MAL_SEVKIYATI = 'Mal Sevkiyatı', 'Mal Sevkiyatı'
@@ -144,6 +172,7 @@ class Transaction(models.Model):
     id = models.CharField('İşlem No', max_length=20, primary_key=True, editable=False)
     date = models.DateField('Tarih')
     unit = models.ForeignKey(Unit, verbose_name='Cari / Birim', on_delete=models.CASCADE, related_name='transactions')
+    category = models.CharField('Kalem / Kategori', max_length=120, blank=True, default='Genel')
     type = models.CharField('Tür', max_length=30, choices=Type.choices)
     description = models.CharField('Açıklama', max_length=255, blank=True)
     debt = models.DecimalField('Borç (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
