@@ -95,7 +95,14 @@ DATABASES = {
 }
 
 # Harici PostgreSQL / Bulut Veritabanı (DATABASE_URL) varsa otomatik bağlan (Render yeniden başlasa da veriler silinmez)
-_db_url = (os.environ.get('DATABASE_URL') or '').strip()
+_db_url = (
+    os.environ.get('DATABASE_URL')
+    or (
+        'postgresql://neondb_owner:npg_d4LbFmXiD0Gr@ep-plain-sea-bd4t8fug.c-8.us-east-2.aws.neon.tech/neondb?sslmode=require'
+        if (os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_URL') or not DEBUG)
+        else ''
+    )
+).strip()
 if _db_url:
     from urllib.parse import parse_qs, urlparse
 
@@ -109,7 +116,7 @@ if _db_url:
             'PASSWORD': _p.password or '',
             'HOST': _p.hostname or '',
             'PORT': str(_p.port or 5432),
-            'CONN_MAX_AGE': 600,
+            'CONN_MAX_AGE': 60,
             'OPTIONS': {'sslmode': _qs.get('sslmode', ['require'])[0]},
         }
 
