@@ -54,27 +54,15 @@ export default function UnitModal({ unit, onClose, onSubmit }) {
             className={inputCls}
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className={labelCls}>Yetkili Kişi</label>
-            <input
-              type="text"
-              placeholder="Ad Soyad"
-              value={form.contact}
-              onChange={(e) => setForm({ ...form, contact: e.target.value })}
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Telefon Numarası</label>
-            <input
-              type="tel"
-              placeholder="0532 000 00 00"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className={`${inputCls} tabular-nums`}
-            />
-          </div>
+        <div>
+          <label className={labelCls}>Yetkili Kişi</label>
+          <input
+            type="text"
+            placeholder="Ad Soyad"
+            value={form.contact}
+            onChange={(e) => setForm({ ...form, contact: e.target.value })}
+            className={inputCls}
+          />
         </div>
 
         {!unit && (

@@ -93,7 +93,7 @@ export default function StatementTab({
                 <div className="text-[11px] font-bold tracking-wider text-[#b8952b]">SİLİVRİ SERHENDİ • BİRİM & CARİ TAKİP SİSTEMİ</div>
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 mt-0.5">{report.unit.name} — Cari Hesap Ekstresi</h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Birim Kodu: {report.unit.id} • Yetkili: {report.unit.contact} • Tel: {report.unit.phone} • Tarih:{' '}
+                  Birim Kodu: {report.unit.id} • Yetkili: {report.unit.contact} • Tarih:{' '}
                   {new Date().toLocaleDateString('tr-TR')}
                 </p>
               </div>

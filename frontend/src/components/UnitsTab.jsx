@@ -438,7 +438,7 @@ export default function UnitsTab({
               <IconSearch className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari, kalem veya detay ara..."
+                placeholder="Cari, yetkili veya kalem ara..."
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
                 className="pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0f6b36]"
@@ -473,7 +473,6 @@ export default function UnitsTab({
               <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 text-left">
                 <th className="py-2.5 px-4 font-bold">Cari / Birim & Kalem Özeti</th>
                 <th className="py-2.5 px-4 font-bold">Yetkili</th>
-                <th className="py-2.5 px-4 font-bold">Telefon Numarası</th>
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Borç (₺)</th>
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Ödenen (₺)</th>
                 <th className="py-2.5 px-4 font-bold text-right">Kalan Bakiye (₺)</th>
@@ -542,26 +541,6 @@ export default function UnitsTab({
                           />
                         ) : (
                           u.contact
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-xs text-slate-700 tabular-nums whitespace-nowrap min-w-[130px]">
-                        {editing ? (
-                          <input
-                            type="tel"
-                            value={quick.phone}
-                            onChange={(e) => setQuick({ ...quick, phone: e.target.value })}
-                            onKeyDown={onEnter}
-                            placeholder="05xx xxx xx xx"
-                            className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white focus:outline-none tabular-nums"
-                          />
-                        ) : (
-                          <span
-                            onClick={() => startQuick(u)}
-                            className={`inline-flex items-center gap-1.5 font-semibold ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36] hover:underline' : ''}`}
-                            title={isAdmin ? 'Telefon numarasını düzenlemek için tıklayın' : ''}
-                          >
-                            {u.phone}
-                          </span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-rose-600 tabular-nums whitespace-nowrap">{formatTRY(u.totalDebt)}</td>
@@ -634,7 +613,7 @@ export default function UnitsTab({
                     </tr>
                     {open && (
                       <tr>
-                        <td colSpan={7} className="p-0">
+                        <td colSpan={6} className="p-0">
                           {renderUnitItemsPanel(u)}
                         </td>
                       </tr>
@@ -682,15 +661,6 @@ export default function UnitsTab({
                           className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
                         />
                       </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-500 mb-0.5">Telefon Numarası</label>
-                        <input
-                          type="tel"
-                          value={quick.phone}
-                          onChange={(e) => setQuick({ ...quick, phone: e.target.value })}
-                          className="w-full px-2.5 py-1.5 text-xs font-semibold border border-[#0f6b36] rounded-lg bg-white tabular-nums focus:outline-none"
-                        />
-                      </div>
                       <div className="flex gap-1.5">
                         <button type="submit" className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] text-white cursor-pointer">
                           Kaydet
@@ -712,7 +682,7 @@ export default function UnitsTab({
                       >
                         {u.name}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">{u.contact} • {u.phone}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">Yetkili: {u.contact}</div>
                     </div>
                   )}
 
