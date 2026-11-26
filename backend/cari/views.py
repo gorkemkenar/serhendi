@@ -992,7 +992,7 @@ def security_overview_view(request):
 
     return Response(
         {
-            'steps': steps,
+            'steps': steps if user.is_owner_role else [],
             'integrity': integrity,
             'components': _get_component_inventory(),
             'weakPasswordUsers': weak_pwd_users if user.is_admin_role else [],

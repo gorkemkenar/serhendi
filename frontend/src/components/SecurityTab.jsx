@@ -4,6 +4,7 @@ import { IconCheck, IconLock, IconShield, IconX } from '../icons.jsx';
 import { inputCls, labelCls, primaryBtn } from '../constants.js';
 
 export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshUsers, onSelfPasswordChanged }) {
+  const isOwner = currentUser?.role === 'owner' || currentUser?.isOwner;
   const [section, setSection] = useState('settings'); // 'settings' | 'steps' | 'logs'
   const [overview, setOverview] = useState(null);
   const [twoFA, setTwoFA] = useState(null);
@@ -137,8 +138,8 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
           </div>
         </div>
 
-        {/* MOBİL UYUMLU 3'LÜ SEKME SEÇİCİ */}
-        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-100 text-xs font-semibold">
+        {/* MOBİL UYUMLU SEKME SEÇİCİ (10 Koruma Adımı Yalnızca Owner'da Görünür) */}
+        <div className={`grid ${isOwner ? 'grid-cols-3' : 'grid-cols-2'} gap-1 p-1 rounded-xl bg-slate-100 text-xs font-semibold`}>
           <button
             type="button"
             onClick={() => setSection('settings')}
@@ -148,15 +149,17 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
           >
             Ayarlar & 2FA
           </button>
-          <button
-            type="button"
-            onClick={() => setSection('steps')}
-            className={`px-3 py-2 rounded-lg transition cursor-pointer ${
-              section === 'steps' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            10 Koruma Adımı
-          </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setSection('steps')}
+              className={`px-3 py-2 rounded-lg transition cursor-pointer ${
+                section === 'steps' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              }`}
+            >
+              10 Koruma Adımı
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setSection('logs')}
@@ -339,8 +342,8 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
         </div>
       )}
 
-      {/* 2. BÖLÜM: 10 GÜVENLİK ADIMI (SADE KART LİSTESİ) */}
-      {section === 'steps' && (
+      {/* 2. BÖLÜM: 10 GÜVENLİK ADIMI (YALNIZCA SİSTEM SAHİBİ / OWNER GÖREBİLİR) */}
+      {isOwner && section === 'steps' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {(overview?.steps || []).map((step) => (
             <div key={step.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1.5">
