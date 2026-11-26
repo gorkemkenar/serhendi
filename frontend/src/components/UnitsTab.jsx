@@ -482,33 +482,15 @@ export default function UnitsTab({
                     <tr className={editing ? 'bg-amber-50/50' : open ? 'bg-emerald-50/30' : 'hover:bg-slate-50/70'}>
                       <td className="py-3 px-4 min-w-[220px]">
                         {editing ? (
-                          <div className="flex flex-col gap-1.5">
-                            <input
-                              type="text"
-                              autoFocus
-                              value={quick.name}
-                              onChange={(e) => setQuick({ ...quick, name: e.target.value })}
-                              onKeyDown={onEnter}
-                              placeholder="Cari / Birim Adı"
-                              className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
-                            />
-                            <div className="flex gap-1">
-                              <button
-                                type="button"
-                                onClick={saveQuick}
-                                className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#0f6b36] text-white cursor-pointer"
-                              >
-                                Kaydet
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setQuick(null)}
-                                className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 cursor-pointer"
-                              >
-                                İptal
-                              </button>
-                            </div>
-                          </div>
+                          <input
+                            type="text"
+                            autoFocus
+                            value={quick.name}
+                            onChange={(e) => setQuick({ ...quick, name: e.target.value })}
+                            onKeyDown={onEnter}
+                            placeholder="Cari / Birim Adı"
+                            className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white focus:outline-none"
+                          />
                         ) : (
                           <div
                             onClick={() => toggleExpand(u.id)}
