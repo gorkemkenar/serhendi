@@ -4,8 +4,16 @@ from cari.defaults import load_defaults
 
 
 class Command(BaseCommand):
-    help = 'Varsayılan 8 birimi, örnek cari hareketleri ve kullanıcı şifrelerini yükler.'
+    help = 'Eksik olan varsayılan birimleri, örnek cari hareketleri ve kullanıcıları (mevcut şifreleri ezmeden) yükler.'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='Mevcut verileri ve kullanıcı şifrelerini zorla varsayılanlara sıfırlar.',
+        )
 
     def handle(self, *args, **options):
-        load_defaults()
-        self.stdout.write(self.style.SUCCESS('Varsayılan birimler, hareketler ve kullanıcılar yüklendi.'))
+        force = bool(options.get('force'))
+        load_defaults(force_reset=force)
+        self.stdout.write(self.style.SUCCESS('Varsayılan birimler, hareketler ve kullanıcılar kontrol edildi / yüklendi.'))

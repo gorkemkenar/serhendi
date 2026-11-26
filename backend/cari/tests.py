@@ -3,7 +3,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from .defaults import load_defaults
-from .models import SecurityAuditLog, Transaction, Unit, User
+from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
 from .security import get_totp_token
 
 
@@ -263,3 +263,18 @@ class OwaspTop10SecurityTests(TestCase):
         # Kalemi sil
         del_res = self.client.delete(f'/api/unit-items/{item_id}/')
         self.assertEqual(del_res.status_code, 204)
+
+    def test_14_seed_defaults_preserves_custom_passwords_and_data(self):
+        """seed_defaults (force_reset=False) çalıştığında mevcut kullanıcıların değiştirilmiş şifreleri ve eklenen kayıtlar silinmez."""
+        genel = User.objects.get(username='genel')
+        genel.set_password('OzelYeniSifre!99')
+        genel.save()
+
+        UnitItem.objects.create(unit_id='BRM-06', name='Özel Kalem', debt=12000, paid=4000)
+
+        # Derleme veya yeniden başlatmada çalışan varsayılan kontrolü (force_reset=False)
+        load_defaults(force_reset=False)
+
+        genel.refresh_from_db()
+        self.assertTrue(genel.check_password('OzelYeniSifre!99'))
+        self.assertTrue(UnitItem.objects.filter(unit_id='BRM-06', name='Özel Kalem').exists())

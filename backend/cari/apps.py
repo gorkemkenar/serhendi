@@ -33,5 +33,13 @@ class CariConfig(AppConfig):
             return
         if os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_URL') or os.environ.get('DJANGO_DEBUG') == '0':
             _keep_alive_started = True
+            # Sunucu yeni bir konteynerde başlarsa eksik varsayılan hesapları (mevcut şifreleri ezmeden) otomatik tamamla
+            try:
+                from django.db.utils import OperationalError, ProgrammingError
+                from .defaults import load_defaults
+
+                load_defaults(force_reset=False)
+            except (OperationalError, ProgrammingError, Exception):
+                pass
             t = threading.Thread(target=_self_keep_alive_loop, daemon=True, name='render-keep-alive')
             t.start()

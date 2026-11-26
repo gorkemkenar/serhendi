@@ -82,58 +82,81 @@ DEFAULT_USERS = [
 
 
 @db_transaction.atomic
-def load_defaults():
-    """Birimleri ve hareketleri sıfırlar, rol hiyerarşisine uygun güvenli şifreli kullanıcıları yükler."""
-    Transaction.objects.all().delete()
-    UnitItem.objects.all().delete()
-    Unit.objects.all().delete()
+def load_defaults(force_reset: bool = False):
+    """Varsayılan birimleri, kalemleri, hareketleri ve kullanıcıları yükler.
 
+    - force_reset=False (Derleme / Başlangıç sırasında seed_defaults):
+      Yalnızca eksik olan varsayılan birim, kalem ve kullanıcıları oluşturur.
+      Mevcut kullanıcıların değiştirilmiş şifrelerine, rollerine veya eklenen kayıtlara ASLA dokunmaz.
+    - force_reset=True (Arayüzden "Varsayılanları Yükle" butonuna basıldığında):
+      Birimleri, kalemleri ve hareketleri sıfırlar; varsayılan şifreleri yeniden yükler.
+    """
+    if force_reset:
+        Transaction.objects.all().delete()
+        UnitItem.objects.all().delete()
+        Unit.objects.all().delete()
+
+    has_existing_units = Unit.objects.exists()
     for uid, name, contact, phone in DEFAULT_UNITS:
-        Unit.objects.create(id=uid, name=name, contact=contact, phone=encrypt_sensitive(phone))
+        if force_reset or not Unit.objects.filter(pk=uid).exists():
+            Unit.objects.update_or_create(
+                id=uid,
+                defaults={'name': name, 'contact': contact, 'phone': encrypt_sensitive(phone)},
+            )
 
-    for iid, unit_id, iname, debt, paid in DEFAULT_UNIT_ITEMS:
-        UnitItem.objects.create(
-            id=iid,
-            unit_id=unit_id,
-            name=iname,
-            debt=Decimal(debt),
-            paid=Decimal(paid),
-        )
+    has_existing_items = UnitItem.objects.exists()
+    if force_reset or not has_existing_items:
+        for iid, unit_id, iname, debt, paid in DEFAULT_UNIT_ITEMS:
+            if Unit.objects.filter(pk=unit_id).exists():
+                UnitItem.objects.update_or_create(
+                    id=iid,
+                    defaults={
+                        'unit_id': unit_id,
+                        'name': iname,
+                        'debt': Decimal(debt),
+                        'paid': Decimal(paid),
+                    },
+                )
 
-    prev_hash = 'GENESIS'
-    for tid, date, unit_id, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:
-        tx = Transaction(
-            id=tid,
-            date=date,
-            unit_id=unit_id,
-            type=tx_type,
-            description=desc,
-            debt=Decimal(debt),
-            credit=Decimal(credit),
-            created_by=ADMIN_NAME,
-            prev_hash=prev_hash,
-        )
-        tx.save()
-        prev_hash = tx.integrity_hash
+    has_existing_txs = Transaction.objects.exists()
+    if force_reset or not has_existing_txs:
+        prev_hash = 'GENESIS'
+        for tid, date, unit_id, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:
+            if Unit.objects.filter(pk=unit_id).exists():
+                tx = Transaction(
+                    id=tid,
+                    date=date,
+                    unit_id=unit_id,
+                    type=tx_type,
+                    description=desc,
+                    debt=Decimal(debt),
+                    credit=Decimal(credit),
+                    created_by=ADMIN_NAME,
+                    prev_hash=prev_hash,
+                )
+                tx.save()
+                prev_hash = tx.integrity_hash
 
     for full_name, username, password, role, unit_id in DEFAULT_USERS:
-        user, _ = User.objects.get_or_create(username=username)
-        user.full_name = full_name
-        user.role = role
-        user.unit_id = unit_id
-        user.is_active = True
-        user.is_staff = role in ('super_admin', 'admin')
-        user.is_superuser = role == 'super_admin'
-        user.failed_login_attempts = 0
-        user.locked_until = None
-        user.must_change_password = password.lower() in WEAK_PASSWORDS or len(password) < 8
-        user.set_password(password)
-        user.save()
+        user, created = User.objects.get_or_create(username=username)
+        if created or force_reset or not user.has_usable_password():
+            user.full_name = full_name
+            user.role = role
+            user.unit_id = unit_id if Unit.objects.filter(pk=unit_id).exists() else None
+            user.is_active = True
+            user.is_staff = role in ('super_admin', 'admin')
+            user.is_superuser = role == 'super_admin'
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            user.must_change_password = password.lower() in WEAK_PASSWORDS or len(password) < 8
+            user.set_password(password)
+            user.save()
 
-    SecurityAuditLog.objects.create(
-        action='DEFAULTS_LOADED',
-        severity=SecurityAuditLog.Severity.INFO,
-        username='system',
-        ip_address='127.0.0.1',
-        description='Varsayılan 8 birim (şifreli), 13 cari hareket (HMAC-SHA256 imzalı) ve 4 kademeli rol hiyerarşisi kullanıcıları yüklendi.',
-    )
+    if force_reset or not has_existing_units:
+        SecurityAuditLog.objects.create(
+            action='DEFAULTS_LOADED',
+            severity=SecurityAuditLog.Severity.INFO,
+            username='system',
+            ip_address='127.0.0.1',
+            description='Varsayılan 8 birim (şifreli), cari kalemler, hareketler ve kullanıcılar yüklendi.',
+        )

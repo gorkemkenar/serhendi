@@ -94,6 +94,25 @@ DATABASES = {
     }
 }
 
+# Harici PostgreSQL / Bulut Veritabanı (DATABASE_URL) varsa otomatik bağlan (Render yeniden başlasa da veriler silinmez)
+_db_url = (os.environ.get('DATABASE_URL') or '').strip()
+if _db_url:
+    from urllib.parse import parse_qs, urlparse
+
+    _p = urlparse(_db_url)
+    if _p.scheme in ('postgres', 'postgresql'):
+        _qs = parse_qs(_p.query)
+        DATABASES['default'] = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': (_p.path or '').lstrip('/'),
+            'USER': _p.username or '',
+            'PASSWORD': _p.password or '',
+            'HOST': _p.hostname or '',
+            'PORT': str(_p.port or 5432),
+            'CONN_MAX_AGE': 600,
+            'OPTIONS': {'sslmode': _qs.get('sslmode', ['require'])[0]},
+        }
+
 AUTH_USER_MODEL = 'cari.User'
 
 # 7. Kimlik Doğrulama Hataları: Güçlü şifre politikası doğrulayıcıları

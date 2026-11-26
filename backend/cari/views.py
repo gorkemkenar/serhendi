@@ -241,7 +241,7 @@ def reset_defaults_view(request):
             {'detail': 'Rol Hiyerarşisi: Sistem varsayılanlarını sıfırlama yetkisi yalnızca Baş Yöneticiye (admin) aittir.'},
             status=status.HTTP_403_FORBIDDEN,
         )
-    load_defaults()
+    load_defaults(force_reset=True)
     log_security_event(
         action='RESET_DEFAULTS',
         severity='WARNING',
