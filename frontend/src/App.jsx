@@ -176,13 +176,15 @@ export default function App() {
       .map((unit) => {
         const unitTxs = transactions.filter((t) => t.unitId === unit.id).sort(byDateDesc);
         const items = unitItems.filter((i) => i.unitId === unit.id);
-        const txDebt = unitTxs.reduce((acc, t) => acc + (Number(t.debt) || 0), 0);
-        const txCredit = unitTxs.reduce((acc, t) => acc + (Number(t.credit) || 0), 0);
         const itemsDebt = items.reduce((acc, i) => acc + (Number(i.debt) || 0), 0);
         const itemsPaid = items.reduce((acc, i) => acc + (Number(i.paid) || 0), 0);
-        // Kalemler varsa cari toplamlarını kalemlerin Borç / Ödenen toplamıyla veya hareketlerle uyumlu göster
-        const totalDebt = items.length > 0 ? itemsDebt : txDebt;
-        const totalCredit = items.length > 0 ? itemsPaid : txCredit;
+        // Kaleme bağlı olmayan (Genel / bağımsız) hareketleri de toplama dahil et;
+        // böylece hem kalem düzenlemeleri hem de kalemsiz cari hareketler toplama anında yansır.
+        const unlinkedTxs = unitTxs.filter((t) => !t.itemId || !items.some((i) => i.id === t.itemId));
+        const unlinkedDebt = unlinkedTxs.reduce((acc, t) => acc + (Number(t.debt) || 0), 0);
+        const unlinkedCredit = unlinkedTxs.reduce((acc, t) => acc + (Number(t.credit) || 0), 0);
+        const totalDebt = items.length > 0 ? itemsDebt + unlinkedDebt : unlinkedDebt;
+        const totalCredit = items.length > 0 ? itemsPaid + unlinkedCredit : unlinkedCredit;
         return {
           ...unit,
           items,
@@ -243,12 +245,13 @@ export default function App() {
         return { ...r, runningBalance: running };
       });
 
-    const txDebt = rows.reduce((s, r) => s + (Number(r.debt) || 0), 0);
-    const txCredit = rows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
     const itemsDebt = items.reduce((s, i) => s + (Number(i.debt) || 0), 0);
     const itemsPaid = items.reduce((s, i) => s + (Number(i.paid) || 0), 0);
-    const totalDebt = items.length > 0 ? itemsDebt : txDebt;
-    const totalCredit = items.length > 0 ? itemsPaid : txCredit;
+    const unlinkedRows = rows.filter((r) => !r.itemId || !items.some((i) => i.id === r.itemId));
+    const unlinkedDebt = unlinkedRows.reduce((s, r) => s + (Number(r.debt) || 0), 0);
+    const unlinkedCredit = unlinkedRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+    const totalDebt = items.length > 0 ? itemsDebt + unlinkedDebt : unlinkedDebt;
+    const totalCredit = items.length > 0 ? itemsPaid + unlinkedCredit : unlinkedCredit;
     return { unit, rows, totalDebt, totalCredit, netBalance: totalDebt - totalCredit };
   }, [units, unitItems, transactions, statementUnitId, isUnitObserver, currentUser]);
 

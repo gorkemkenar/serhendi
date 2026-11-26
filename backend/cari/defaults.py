@@ -97,16 +97,16 @@ def load_defaults(force_reset: bool = False):
         UnitItem.objects.all().delete()
         Unit.objects.all().delete()
 
-    has_existing_units = Unit.objects.exists()
-    for uid, name, contact, phone in DEFAULT_UNITS:
-        if force_reset or not Unit.objects.filter(pk=uid).exists():
+    # Yalnızca veritabanı TAMAMEN BOŞSA (ilk kurulum) veya yönetici "Varsayılanları Yükle" (force_reset=True) dediyse birim/kalem/hareket yükle.
+    # Böylece silinen veya değiştirilen hiçbir cari, kalem ya da hareket yeniden başlatmada geri gelmez veya sıfırlanmaz.
+    has_any_units = Unit.objects.exists()
+    if force_reset or not has_any_units:
+        for uid, name, contact, phone in DEFAULT_UNITS:
             Unit.objects.update_or_create(
                 id=uid,
                 defaults={'name': name, 'contact': contact, 'phone': encrypt_sensitive(phone)},
             )
 
-    has_existing_items = UnitItem.objects.exists()
-    if force_reset or not has_existing_items:
         for iid, unit_id, iname, idesc, debt, paid in DEFAULT_UNIT_ITEMS:
             if Unit.objects.filter(pk=unit_id).exists():
                 UnitItem.objects.update_or_create(
@@ -120,8 +120,6 @@ def load_defaults(force_reset: bool = False):
                     },
                 )
 
-    has_existing_txs = Transaction.objects.exists()
-    if force_reset or not has_existing_txs:
         prev_hash = 'GENESIS'
         for tid, date, unit_id, item_id, cat_name, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:
             if Unit.objects.filter(pk=unit_id).exists():
@@ -157,7 +155,7 @@ def load_defaults(force_reset: bool = False):
             user.set_password(password)
             user.save()
 
-    if force_reset or not has_existing_units:
+    if force_reset or not has_any_units:
         SecurityAuditLog.objects.create(
             action='DEFAULTS_LOADED',
             severity=SecurityAuditLog.Severity.INFO,
