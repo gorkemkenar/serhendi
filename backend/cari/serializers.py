@@ -52,12 +52,14 @@ class UnitSerializer(serializers.ModelSerializer):
 
 class UnitItemSerializer(serializers.ModelSerializer):
     unitId = serializers.PrimaryKeyRelatedField(source='unit', queryset=Unit.objects.all())
+    unitName = serializers.CharField(source='unit.name', read_only=True)
+    description = serializers.CharField(required=False, allow_blank=True, default='')
     remaining = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitItem
-        fields = ['id', 'unitId', 'name', 'debt', 'paid', 'remaining']
-        read_only_fields = ['id', 'remaining']
+        fields = ['id', 'unitId', 'unitName', 'name', 'description', 'debt', 'paid', 'remaining']
+        read_only_fields = ['id', 'unitName', 'remaining']
         extra_kwargs = {
             'debt': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
             'paid': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
@@ -72,9 +74,18 @@ class UnitItemSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Kalem adı boş bırakılamaz (Örn: Kumanya, Kandil Simidi, Patates).')
         return val
 
+    def validate_description(self, value):
+        return sanitize_text_input(value, 'Kalem detayı')
+
 
 class TransactionSerializer(serializers.ModelSerializer):
     unitId = serializers.PrimaryKeyRelatedField(source='unit', queryset=Unit.objects.all())
+    unitName = serializers.CharField(source='unit.name', read_only=True)
+    itemId = serializers.PrimaryKeyRelatedField(
+        source='item', queryset=UnitItem.objects.all(), allow_null=True, required=False
+    )
+    itemName = serializers.SerializerMethodField()
+    itemDescription = serializers.SerializerMethodField()
     category = serializers.CharField(required=False, allow_blank=True, default='Genel')
     createdBy = serializers.CharField(source='created_by', read_only=True)
     documentUrl = serializers.CharField(source='document_url', required=False, allow_blank=True, default='')
@@ -96,6 +107,10 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id',
             'date',
             'unitId',
+            'unitName',
+            'itemId',
+            'itemName',
+            'itemDescription',
             'category',
             'type',
             'description',
@@ -107,11 +122,21 @@ class TransactionSerializer(serializers.ModelSerializer):
             'integrityVerified',
             'amount',
         ]
-        read_only_fields = ['id', 'integrityHash', 'integrityVerified']
+        read_only_fields = ['id', 'unitName', 'itemName', 'itemDescription', 'integrityHash', 'integrityVerified']
         extra_kwargs = {
             'debt': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
             'credit': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
         }
+
+    def get_itemName(self, obj):
+        if obj.item_id and obj.item:
+            return obj.item.name
+        return obj.category or 'Genel'
+
+    def get_itemDescription(self, obj):
+        if obj.item_id and obj.item:
+            return obj.item.description or ''
+        return ''
 
     def get_integrityVerified(self, obj):
         expected = compute_transaction_hash(obj, obj.prev_hash or 'GENESIS')
@@ -132,6 +157,23 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         amount = attrs.pop('amount', None)
+        unit = attrs.get('unit') or getattr(self.instance, 'unit', None)
+        item = attrs.get('item', getattr(self.instance, 'item', None))
+        category = (attrs.get('category') or '').strip()
+
+        # Eğer kalem seçilmişse veya yeni kalem adı (category) girilmişse cari ile eşleştir
+        if item is not None and unit is not None and item.unit_id != unit.id:
+            # Farklı birimin kalemi seçildiyse aynı isimde bu birimde ara veya oluştur
+            item, _ = UnitItem.objects.get_or_create(unit=unit, name=item.name)
+            attrs['item'] = item
+
+        if item is None and unit is not None and category and category != 'Genel':
+            item, _ = UnitItem.objects.get_or_create(unit=unit, name=category)
+            attrs['item'] = item
+
+        if item is not None:
+            attrs['category'] = item.name
+
         if self.instance is None:
             if amount is None:
                 raise serializers.ValidationError({'amount': 'Lütfen geçerli bir tutar girin.'})
@@ -140,7 +182,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             attrs['debt'] = amount if is_debt else Decimal('0')
             attrs['credit'] = Decimal('0') if is_debt else amount
             if not attrs.get('description'):
-                attrs['description'] = tx_type
+                attrs['description'] = f"{attrs.get('category') or ''} - {tx_type}".strip(' -')
         return attrs
 
 

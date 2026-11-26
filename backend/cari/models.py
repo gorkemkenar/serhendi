@@ -135,6 +135,7 @@ class UnitItem(models.Model):
     id = models.CharField('Kalem Kodu', max_length=20, primary_key=True, editable=False)
     unit = models.ForeignKey(Unit, verbose_name='Cari / Birim', on_delete=models.CASCADE, related_name='items')
     name = models.CharField('Kalem Adı', max_length=150)
+    description = models.CharField('Kalem Detayı / Neye Ait', max_length=255, blank=True, default='')
     debt = models.DecimalField('Borç (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     paid = models.DecimalField('Ödenen (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
@@ -172,6 +173,14 @@ class Transaction(models.Model):
     id = models.CharField('İşlem No', max_length=20, primary_key=True, editable=False)
     date = models.DateField('Tarih')
     unit = models.ForeignKey(Unit, verbose_name='Cari / Birim', on_delete=models.CASCADE, related_name='transactions')
+    item = models.ForeignKey(
+        UnitItem,
+        verbose_name='Bağlı Kalem',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='transactions',
+    )
     category = models.CharField('Kalem / Kategori', max_length=120, blank=True, default='Genel')
     type = models.CharField('Tür', max_length=30, choices=Type.choices)
     description = models.CharField('Açıklama', max_length=255, blank=True)

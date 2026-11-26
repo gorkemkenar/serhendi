@@ -19,49 +19,49 @@ DEFAULT_UNITS = [
     ('BRM-08', 'Silivri il heyeti', 'Yusuf Arslan', '0532 108 08 08'),
 ]
 
-# Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, borç, ödenen)
+# Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, kalem detayı / neye ait, borç, ödenen)
 DEFAULT_UNIT_ITEMS = [
-    ('KLM-0101', 'BRM-01', 'Kumanya', 80000, 55000),
-    ('KLM-0102', 'BRM-01', 'Kandil Simidi', 35000, 25000),
-    ('KLM-0103', 'BRM-01', 'Patates', 30000, 15000),
-    ('KLM-0104', 'BRM-02', 'Kumanya', 50000, 30000),
-    ('KLM-0105', 'BRM-02', 'Kandil Simidi', 20000, 12000),
-    ('KLM-0106', 'BRM-02', 'Patates', 18000, 8000),
-    ('KLM-0107', 'BRM-03', 'Kumanya', 42000, 0),
-    ('KLM-0108', 'BRM-03', 'Kandil Simidi', 18000, 0),
-    ('KLM-0109', 'BRM-03', 'Patates', 12000, 0),
-    ('KLM-0110', 'BRM-04', 'Kumanya', 54000, 54000),
-    ('KLM-0111', 'BRM-04', 'Kandil Simidi', 22000, 22000),
-    ('KLM-0112', 'BRM-04', 'Patates', 18000, 18000),
-    ('KLM-0113', 'BRM-05', 'Kumanya', 35000, 0),
-    ('KLM-0114', 'BRM-05', 'Kandil Simidi', 15000, 0),
-    ('KLM-0115', 'BRM-05', 'Patates', 11500, 0),
-    ('KLM-0116', 'BRM-06', 'Kumanya', 45000, 25000),
-    ('KLM-0117', 'BRM-06', 'Kandil Simidi', 20000, 10000),
-    ('KLM-0118', 'BRM-06', 'Patates', 18000, 8000),
-    ('KLM-0119', 'BRM-07', 'Kumanya', 30000, 0),
-    ('KLM-0120', 'BRM-07', 'Kandil Simidi', 14000, 0),
-    ('KLM-0121', 'BRM-07', 'Patates', 10000, 0),
-    ('KLM-0122', 'BRM-08', 'Kumanya', 120000, 90000),
-    ('KLM-0123', 'BRM-08', 'Kandil Simidi', 50000, 35000),
-    ('KLM-0124', 'BRM-08', 'Patates', 40000, 25000),
+    ('KLM-0101', 'BRM-01', 'Kumanya', 'Dergah Aylık Erzak & Kumanya Kolisi', 80000, 55000),
+    ('KLM-0102', 'BRM-01', 'Kandil Simidi', 'Kandil Gecesi Simit Dağıtımı', 35000, 25000),
+    ('KLM-0103', 'BRM-01', 'Patates', 'Çuval Patates & Kışlık Sebze Sevkiyatı', 30000, 15000),
+    ('KLM-0104', 'BRM-02', 'Kumanya', 'Yenimahalle Erzak & Kumanya Paketi', 50000, 30000),
+    ('KLM-0105', 'BRM-02', 'Kandil Simidi', 'Kandil Simidi & İkramlık', 20000, 12000),
+    ('KLM-0106', 'BRM-02', 'Patates', 'Mutfak Patates & Soğan Tedariki', 18000, 8000),
+    ('KLM-0107', 'BRM-03', 'Kumanya', 'Kiptaş 2 Kumanya Dağıtım Paketi', 42000, 0),
+    ('KLM-0108', 'BRM-03', 'Kandil Simidi', 'Kandil Simidi التوزيع', 18000, 0),
+    ('KLM-0109', 'BRM-03', 'Patates', 'Çuval Patates Sevkiyatı', 12000, 0),
+    ('KLM-0110', 'BRM-04', 'Kumanya', 'Mimar Sinan Dönem Kumanyası', 54000, 54000),
+    ('KLM-0111', 'BRM-04', 'Kandil Simidi', 'Kandil Simidi Kolisi', 22000, 22000),
+    ('KLM-0112', 'BRM-04', 'Patates', 'Çuval Patates Alımı', 18000, 18000),
+    ('KLM-0113', 'BRM-05', 'Kumanya', 'Mavi Yelken Kumanya & Gıda', 35000, 0),
+    ('KLM-0114', 'BRM-05', 'Kandil Simidi', 'Kandil Simidi Paketi', 15000, 0),
+    ('KLM-0115', 'BRM-05', 'Patates', 'Kışlık Patates Çuvalı', 11500, 0),
+    ('KLM-0116', 'BRM-06', 'Kumanya', 'Gümüşyaka Dergah Aylık Kumanya & Erzak', 45000, 25000),
+    ('KLM-0117', 'BRM-06', 'Kandil Simidi', 'Gümüşyaka Kandil Simidi Dağıtımı', 20000, 10000),
+    ('KLM-0118', 'BRM-06', 'Patates', 'Gümüşyaka Mutfak Patates Çuvalı', 18000, 8000),
+    ('KLM-0119', 'BRM-07', 'Kumanya', 'Danamandıra Kumanya Sevkiyatı', 30000, 0),
+    ('KLM-0120', 'BRM-07', 'Kandil Simidi', 'Kandil Simidi Paketi', 14000, 0),
+    ('KLM-0121', 'BRM-07', 'Patates', 'Patates Tedariki', 10000, 0),
+    ('KLM-0122', 'BRM-08', 'Kumanya', 'Silivri İl Heyeti Genel Kumanya', 120000, 90000),
+    ('KLM-0123', 'BRM-08', 'Kandil Simidi', 'İl Heyeti Kandil Simidi Organizasyonu', 50000, 35000),
+    ('KLM-0124', 'BRM-08', 'Patates', 'İl Heyeti Toplu Patates Sevkiyatı', 40000, 25000),
 ]
 
-# (id, tarih, birim, tür, açıklama, borç, alacak)
+# (id, tarih, birim, kalem_id, kalem_adı, tür, açıklama, borç, alacak)
 DEFAULT_TRANSACTIONS = [
-    ('HRK-1001', '2026-11-02', 'BRM-01', 'Mal Sevkiyatı', 'Merkez Dergah Dönem Malzeme Sevkiyatı', 145000, 0),
-    ('HRK-1002', '2026-11-05', 'BRM-01', 'Havale / EFT', 'Merkez Dergah Banka Havale Ödemesi', 0, 95000),
-    ('HRK-1003', '2026-11-07', 'BRM-02', 'Borç Kaydı', 'Yenimahalle Dergah Tedarik Borç Kaydı', 88000, 0),
-    ('HRK-1004', '2026-11-09', 'BRM-02', 'Nakit Tahsilat', 'Makbuz Karşılığı Nakit Tahsilat', 0, 50000),
-    ('HRK-1005', '2026-11-11', 'BRM-03', 'Mal Sevkiyatı', 'Kiptaş 2 Dergah Sevkiyat Paketi', 72000, 0),
-    ('HRK-1006', '2026-11-12', 'BRM-04', 'Borç Kaydı', 'Mimar Sinan Dergah Ürün Sevkiyatı', 94000, 0),
-    ('HRK-1007', '2026-11-14', 'BRM-04', 'Alacak Kaydı', 'Mimar Sinan Dergah Hesap Alacak Mahsubu', 0, 94000),
-    ('HRK-1008', '2026-11-15', 'BRM-05', 'Mal Sevkiyatı', 'Mavi yelken Dergah Sevkiyat Kaydı', 61500, 0),
-    ('HRK-1009', '2026-11-17', 'BRM-06', 'Borç Kaydı', 'Gümüşyaka Dergah Dönemsel Borç Kaydı', 83000, 0),
-    ('HRK-1010', '2026-11-18', 'BRM-06', 'İade / Mahsup', 'Gümüşyaka Dergah İade Mahsup Kaydı', 0, 43000),
-    ('HRK-1011', '2026-11-19', 'BRM-07', 'Mal Sevkiyatı', 'Danamandıra Dergah Sevkiyat Teslimatı', 54000, 0),
-    ('HRK-1012', '2026-11-20', 'BRM-08', 'Borç Kaydı', 'Silivri il heyeti Genel Sevkiyat Kaydı', 210000, 0),
-    ('HRK-1013', '2026-11-21', 'BRM-08', 'Havale / EFT', 'Silivri il heyeti Kısmi Tahsilat Ödemesi', 0, 150000),
+    ('HRK-1001', '2026-11-02', 'BRM-01', 'KLM-0101', 'Kumanya', 'Mal Sevkiyatı', 'Merkez Dergah Dönem Kumanya & Erzak Sevkiyatı', 145000, 0),
+    ('HRK-1002', '2026-11-05', 'BRM-01', 'KLM-0101', 'Kumanya', 'Havale / EFT', 'Merkez Dergah Kumanya Banka Havale Ödemesi', 0, 95000),
+    ('HRK-1003', '2026-11-07', 'BRM-02', 'KLM-0104', 'Kumanya', 'Borç Kaydı', 'Yenimahalle Dergah Kumanya & Simit Borç Kaydı', 88000, 0),
+    ('HRK-1004', '2026-11-09', 'BRM-02', 'KLM-0104', 'Kumanya', 'Nakit Tahsilat', 'Makbuz Karşılığı Kumanya Nakit Tahsilat', 0, 50000),
+    ('HRK-1005', '2026-11-11', 'BRM-03', 'KLM-0107', 'Kumanya', 'Mal Sevkiyatı', 'Kiptaş 2 Dergah Kumanya Sevkiyat Paketi', 72000, 0),
+    ('HRK-1006', '2026-11-12', 'BRM-04', 'KLM-0110', 'Kumanya', 'Borç Kaydı', 'Mimar Sinan Dergah Kumanya Ürün Sevkiyatı', 94000, 0),
+    ('HRK-1007', '2026-11-14', 'BRM-04', 'KLM-0110', 'Kumanya', 'Alacak Kaydı', 'Mimar Sinan Dergah Kumanya Hesap Alacak Mahsubu', 0, 94000),
+    ('HRK-1008', '2026-11-15', 'BRM-05', 'KLM-0113', 'Kumanya', 'Mal Sevkiyatı', 'Mavi yelken Dergah Kumanya Sevkiyat Kaydı', 61500, 0),
+    ('HRK-1009', '2026-11-17', 'BRM-06', 'KLM-0116', 'Kumanya', 'Borç Kaydı', 'Gümüşyaka Dergah Kumanya & Patates Borç Kaydı', 83000, 0),
+    ('HRK-1010', '2026-11-18', 'BRM-06', 'KLM-0116', 'Kumanya', 'İade / Mahsup', 'Gümüşyaka Dergah Kumanya Ödeme / Mahsup Kaydı', 0, 43000),
+    ('HRK-1011', '2026-11-19', 'BRM-07', 'KLM-0119', 'Kumanya', 'Mal Sevkiyatı', 'Danamandıra Dergah Kumanya Sevkiyat Teslimatı', 54000, 0),
+    ('HRK-1012', '2026-11-20', 'BRM-08', 'KLM-0122', 'Kumanya', 'Borç Kaydı', 'Silivri il heyeti Genel Kumanya Sevkiyat Kaydı', 210000, 0),
+    ('HRK-1013', '2026-11-21', 'BRM-08', 'KLM-0122', 'Kumanya', 'Havale / EFT', 'Silivri il heyeti Kumanya Kısmi Tahsilat Ödemesi', 0, 150000),
 ]
 
 # Rol Hiyerarşisi (Seviye 4 -> Seviye 1) ve Güçlü Şifreli Deneme Hesapları:
@@ -106,13 +106,14 @@ def load_defaults(force_reset: bool = False):
 
     has_existing_items = UnitItem.objects.exists()
     if force_reset or not has_existing_items:
-        for iid, unit_id, iname, debt, paid in DEFAULT_UNIT_ITEMS:
+        for iid, unit_id, iname, idesc, debt, paid in DEFAULT_UNIT_ITEMS:
             if Unit.objects.filter(pk=unit_id).exists():
                 UnitItem.objects.update_or_create(
                     id=iid,
                     defaults={
                         'unit_id': unit_id,
                         'name': iname,
+                        'description': idesc,
                         'debt': Decimal(debt),
                         'paid': Decimal(paid),
                     },
@@ -121,12 +122,15 @@ def load_defaults(force_reset: bool = False):
     has_existing_txs = Transaction.objects.exists()
     if force_reset or not has_existing_txs:
         prev_hash = 'GENESIS'
-        for tid, date, unit_id, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:
+        for tid, date, unit_id, item_id, cat_name, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:
             if Unit.objects.filter(pk=unit_id).exists():
+                linked_item = UnitItem.objects.filter(pk=item_id).first()
                 tx = Transaction(
                     id=tid,
                     date=date,
                     unit_id=unit_id,
+                    item=linked_item,
+                    category=cat_name,
                     type=tx_type,
                     description=desc,
                     debt=Decimal(debt),

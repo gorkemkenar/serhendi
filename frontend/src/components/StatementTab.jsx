@@ -3,7 +3,13 @@ import SilivriSerhendiLogo from '../Logo.jsx';
 import { IconEdit, IconPlus, IconPrinter, IconTrash } from '../icons.jsx';
 import { formatTRY, primaryBtn } from '../constants.js';
 
-const PRESET_ITEMS = ['Kumanya', 'Kandil Simidi', 'Patates', 'Kurban', 'Takvim / Dergi'];
+const PRESET_ITEMS = [
+  { name: 'Kumanya', description: 'Aylık Erzak & Kumanya Kolisi' },
+  { name: 'Kandil Simidi', description: 'Kandil Gecesi Simit Dağıtımı' },
+  { name: 'Patates', description: 'Mutfak Çuval Patates Sevkiyatı' },
+  { name: 'Kurban', description: 'Kurban & Et Organizasyonu' },
+  { name: 'Takvim / Dergi', description: 'Yıllık Takvim & Yayın Dağıtımı' }
+];
 
 export default function StatementTab({
   report,
@@ -16,7 +22,7 @@ export default function StatementTab({
   onUpdateItem,
   onDeleteItem
 }) {
-  const [newForm, setNewForm] = useState({ name: '', debt: '', paid: '' });
+  const [newForm, setNewForm] = useState({ name: '', description: '', debt: '', paid: '' });
   const [editItem, setEditItem] = useState(null);
 
   const handleAdd = async (e) => {
@@ -25,10 +31,11 @@ export default function StatementTab({
     const ok = await onCreateItem?.({
       unitId: report.unit.id,
       name: newForm.name.trim(),
+      description: (newForm.description || '').trim(),
       debt: Math.max(0, parseFloat(newForm.debt) || 0).toFixed(2),
       paid: Math.max(0, parseFloat(newForm.paid) || 0).toFixed(2)
     });
-    if (ok) setNewForm({ name: '', debt: '', paid: '' });
+    if (ok) setNewForm({ name: '', description: '', debt: '', paid: '' });
   };
 
   const handleSaveEdit = async (e) => {
@@ -36,6 +43,7 @@ export default function StatementTab({
     if (!editItem || !editItem.name.trim()) return;
     const ok = await onUpdateItem?.(editItem.id, {
       name: editItem.name.trim(),
+      description: (editItem.description || '').trim(),
       debt: Math.max(0, parseFloat(editItem.debt) || 0).toFixed(2),
       paid: Math.max(0, parseFloat(editItem.paid) || 0).toFixed(2)
     });
@@ -84,7 +92,8 @@ export default function StatementTab({
                 <div className="text-[11px] font-bold tracking-wider text-[#b8952b]">SİLİVRİ SERHENDİ • BİRİM & CARİ TAKİP SİSTEMİ</div>
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 mt-0.5">{report.unit.name} — Cari Hesap Ekstresi</h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Yetkili: {report.unit.contact} • Tel: {report.unit.phone} • Tarih: {new Date().toLocaleDateString('tr-TR')}
+                  Birim Kodu: {report.unit.id} • Yetkili: {report.unit.contact} • Tel: {report.unit.phone} • Tarih:{' '}
+                  {new Date().toLocaleDateString('tr-TR')}
                 </p>
               </div>
             </div>
@@ -112,22 +121,28 @@ export default function StatementTab({
             </div>
           </div>
 
-          {/* 1. BÖLÜM: KALEM KALEM BORÇ LİSTESİ (KUMANYA, KANDİL SİMİDİ, PATATES -> BORÇ / ÖDENEN / KALAN) */}
+          {/* 1. BÖLÜM: KALEM KALEM BORÇ & DETAY LİSTESİ */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                {report.unit.name} — Kalem Kalem Borç Listesi
+                {report.unit.name} ({report.unit.id}) — Kalem Kalem Borç & Detay Listesi
               </h3>
               {isAdmin && (
                 <div className="no-print flex flex-wrap items-center gap-1">
                   {PRESET_ITEMS.map((p) => (
                     <button
-                      key={p}
+                      key={p.name}
                       type="button"
-                      onClick={() => setNewForm((prev) => ({ ...prev, name: p }))}
+                      onClick={() =>
+                        setNewForm((prev) => ({
+                          ...prev,
+                          name: p.name,
+                          description: `${report.unit.name} - ${p.description}`
+                        }))
+                      }
                       className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-[#0f6b36] cursor-pointer"
                     >
-                      + {p}
+                      + {p.name}
                     </button>
                   ))}
                 </div>
@@ -138,7 +153,8 @@ export default function StatementTab({
               <table className="w-full text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600 text-left">
-                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Kalem Adı</th>
+                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Kalem Kodu & Adı</th>
+                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Ait Olduğu Cari & Detay (Neye Ait?)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Borç (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Ödenen (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Kalan (₺)</th>
@@ -148,7 +164,7 @@ export default function StatementTab({
                 <tbody>
                   {unitItems.length === 0 && (
                     <tr>
-                      <td colSpan={isAdmin ? 5 : 4} className="py-6 text-center text-slate-500 border border-slate-200">
+                      <td colSpan={isAdmin ? 6 : 5} className="py-6 text-center text-slate-500 border border-slate-200">
                         Henüz kalem eklenmemiş.
                       </td>
                     </tr>
@@ -169,7 +185,32 @@ export default function StatementTab({
                               className="w-full px-2 py-1 text-xs border border-[#0f6b36] rounded bg-white"
                             />
                           ) : (
-                            item.name
+                            <div className="flex items-center gap-1.5">
+                              <span>{item.name}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px]">
+                                {item.id}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3.5 border border-slate-200 text-slate-600">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              placeholder="Kalem detayı / neye ait?"
+                              value={editItem.description || ''}
+                              onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
+                              className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                            />
+                          ) : (
+                            <div>
+                              <div className="text-[11px] font-semibold text-[#0f6b36]">
+                                {report.unit.name} ({report.unit.id})
+                              </div>
+                              <div className="text-xs text-slate-600">
+                                {item.description || `${report.unit.name} — ${item.name} Kalemi`}
+                              </div>
+                            </div>
                           )}
                         </td>
                         <td className="py-2.5 px-3.5 border border-slate-200 text-right tabular-nums font-bold text-rose-600">
@@ -230,7 +271,15 @@ export default function StatementTab({
                               <div className="inline-flex gap-1">
                                 <button
                                   type="button"
-                                  onClick={() => setEditItem({ id: item.id, name: item.name, debt, paid })}
+                                  onClick={() =>
+                                    setEditItem({
+                                      id: item.id,
+                                      name: item.name,
+                                      description: item.description || '',
+                                      debt,
+                                      paid
+                                    })
+                                  }
                                   className="p-1 text-slate-400 hover:text-slate-800 cursor-pointer"
                                   title="Düzenle"
                                 >
@@ -258,16 +307,26 @@ export default function StatementTab({
             {isAdmin && (
               <form
                 onSubmit={handleAdd}
-                className="no-print p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-2 items-end"
+                className="no-print p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-5 gap-2 items-end"
               >
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Yeni Kalem Adı</label>
                   <input
                     type="text"
                     required
-                    placeholder="Örn: Kumanya, Kandil Simidi, Patates..."
+                    placeholder="Örn: Kumanya, Patates..."
                     value={newForm.name}
                     onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
+                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Kalem Detayı / Neye Ait?</label>
+                  <input
+                    type="text"
+                    placeholder={`Örn: ${report.unit.name} erzak alımı`}
+                    value={newForm.description}
+                    onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
                     className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
@@ -306,15 +365,16 @@ export default function StatementTab({
             )}
           </div>
 
-          {/* 2. BÖLÜM: TARİHSEL CARİ HAREKET GEÇMİŞİ */}
+          {/* 2. BÖLÜM: TARİHSEL CARİ HAREKET GEÇMİŞİ (HANGİ KALEME AİT OLDUĞUYLA BİRLİKTE) */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
-            <h3 className="text-sm font-bold text-slate-700">Cari Hareket Geçmişi</h3>
+            <h3 className="text-sm font-bold text-slate-700">Cari Hareket Geçmişi (Kalem Detaylı)</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600 text-left">
                     <th className="py-2 px-3 font-bold border border-slate-200">Tarih</th>
                     <th className="py-2 px-3 font-bold border border-slate-200">No</th>
+                    <th className="py-2 px-3 font-bold border border-slate-200">Ait Olduğu Kalem</th>
                     <th className="py-2 px-3 font-bold border border-slate-200">Tür</th>
                     <th className="py-2 px-3 font-bold border border-slate-200">Açıklama</th>
                     <th className="py-2 px-3 font-bold border border-slate-200 text-right">Borç (₺)</th>
@@ -325,7 +385,7 @@ export default function StatementTab({
                 <tbody>
                   {report.rows.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 border border-slate-200">
+                      <td colSpan={8} className="py-8 text-center text-slate-500 border border-slate-200">
                         Bu cariye ait hareket bulunmuyor.
                       </td>
                     </tr>
@@ -334,6 +394,9 @@ export default function StatementTab({
                     <tr key={r.id}>
                       <td className="py-2 px-3 border border-slate-200 whitespace-nowrap">{r.date}</td>
                       <td className="py-2 px-3 border border-slate-200 font-mono text-[11px] text-slate-500 whitespace-nowrap">{r.id}</td>
+                      <td className="py-2 px-3 border border-slate-200 whitespace-nowrap font-bold text-[#0f6b36]">
+                        {r.itemName || r.category || 'Genel'}
+                      </td>
                       <td className="py-2 px-3 border border-slate-200 whitespace-nowrap font-semibold">{r.type}</td>
                       <td className="py-2 px-3 border border-slate-200">{r.description}</td>
                       <td className="py-2 px-3 border border-slate-200 text-right tabular-nums text-rose-600 font-semibold whitespace-nowrap">

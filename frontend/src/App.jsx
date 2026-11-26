@@ -54,10 +54,11 @@ export default function App() {
   const [unitSearch, setUnitSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('ALL');
+  const [itemFilter, setItemFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statementUnitId, setStatementUnitId] = useState('');
 
-  const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [txModalContext, setTxModalContext] = useState(null); // null | { unitId?: string, itemId?: string }
   const [unitModal, setUnitModal] = useState(null); // null | { unit: Unit | null }
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -82,6 +83,7 @@ export default function App() {
     setUsers([]);
     setActiveTab('units');
     setUnitFilter('ALL');
+    setItemFilter('ALL');
     setTypeFilter('ALL');
     setSearchQuery('');
     setUnitSearch('');
@@ -201,17 +203,25 @@ export default function App() {
     return transactions
       .filter((tx) => {
         if (unitFilter !== 'ALL' && tx.unitId !== unitFilter) return false;
+        if (itemFilter !== 'ALL') {
+          const txCat = tx.itemName || tx.category || 'Genel';
+          if (txCat !== itemFilter) return false;
+        }
         if (typeFilter !== 'ALL' && tx.type !== typeFilter) return false;
         if (q) {
           const unitName = units.find((u) => u.id === tx.unitId)?.name.toLocaleLowerCase('tr-TR') || '';
+          const catName = (tx.itemName || tx.category || '').toLocaleLowerCase('tr-TR');
           return (
-            tx.description.toLocaleLowerCase('tr-TR').includes(q) || tx.id.toLocaleLowerCase('tr-TR').includes(q) || unitName.includes(q)
+            tx.description.toLocaleLowerCase('tr-TR').includes(q) ||
+            tx.id.toLocaleLowerCase('tr-TR').includes(q) ||
+            unitName.includes(q) ||
+            catName.includes(q)
           );
         }
         return true;
       })
       .sort(byDateDesc);
-  }, [transactions, unitFilter, typeFilter, searchQuery, units]);
+  }, [transactions, unitFilter, itemFilter, typeFilter, searchQuery, units]);
 
   const statementReport = useMemo(() => {
     const targetId = isUnitObserver ? currentUser?.unitId : statementUnitId;
@@ -279,7 +289,28 @@ export default function App() {
       } else {
         const created = await api.units.create(payload);
         setUnits((prev) => [...prev, created]);
-        notify('Yeni cari / birim şifreli olarak eklendi.');
+        // Seçilen başlangıç kalemlerini de otomatik oluştur
+        if (Array.isArray(form.initialItems) && form.initialItems.length > 0) {
+          const createdItems = [];
+          for (const it of form.initialItems) {
+            try {
+              const ci = await api.unitItems.create({
+                unitId: created.id,
+                name: it.name,
+                description: `${created.name} — ${it.description}`,
+                debt: '0.00',
+                paid: '0.00'
+              });
+              createdItems.push(ci);
+            } catch {
+              // devam et
+            }
+          }
+          if (createdItems.length > 0) {
+            setUnitItems((prev) => [...prev, ...createdItems]);
+          }
+        }
+        notify('Yeni cari / birim ve başlangıç kalemleri eklendi.');
       }
       return true;
     } catch (err) {
@@ -362,13 +393,18 @@ export default function App() {
       const created = await api.transactions.create({
         date: form.date,
         unitId: form.unitId,
+        itemId: form.itemId || null,
+        category: form.category || 'Genel',
         type: form.type,
         description: form.description,
         documentUrl: form.documentUrl || '',
         amount: amt.toFixed(2)
       });
       setTransactions((prev) => [created, ...prev]);
-      notify('Yeni cari hareket HMAC-SHA256 imzasıyla kaydedildi.');
+      // Kalem toplamları sunucuda güncellendiği için kalem listesini tazele
+      const freshItems = await api.unitItems.list().catch(() => null);
+      if (freshItems) setUnitItems(freshItems);
+      notify(`Yeni cari hareket "${created.itemName || created.category || 'Genel'}" kalemine kaydedildi.`);
       return true;
     } catch (err) {
       handleError(err);
@@ -380,7 +416,9 @@ export default function App() {
     try {
       const updated = await api.transactions.update(id, patch);
       setTransactions((prev) => prev.map((t) => (t.id === id ? updated : t)));
-      notify('Kayıt güncellendi ve yeniden imzalandı.');
+      const freshItems = await api.unitItems.list().catch(() => null);
+      if (freshItems) setUnitItems(freshItems);
+      notify('Kayıt ve bağlı kalem bakiyesi güncellendi.');
     } catch (err) {
       handleError(err);
     }
@@ -391,6 +429,8 @@ export default function App() {
     try {
       await api.transactions.remove(tx.id);
       setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
+      const freshItems = await api.unitItems.list().catch(() => null);
+      if (freshItems) setUnitItems(freshItems);
       notify('Cari hareket silindi.');
     } catch (err) {
       handleError(err);
@@ -684,6 +724,7 @@ export default function App() {
         {activeTab === 'units' && (
           <UnitsTab
             units={visibleUnitsWithSummary}
+            transactions={transactions}
             isAdmin={isAdmin}
             isUnitObserver={isUnitObserver}
             search={unitSearch}
@@ -691,7 +732,7 @@ export default function App() {
             viewMode={unitViewMode}
             onViewMode={setUnitViewMode}
             onNewUnit={() => setUnitModal({ unit: null })}
-            onNewTx={() => setIsTxModalOpen(true)}
+            onNewTx={(uId, itId) => setTxModalContext({ unitId: uId || '', itemId: itId || '' })}
             onEditUnit={(u) => setUnitModal({ unit: u })}
             onQuickSave={handleQuickSave}
             onDeleteUnit={handleDeleteUnit}
@@ -709,16 +750,19 @@ export default function App() {
           <LedgerTab
             transactions={filteredTransactions}
             units={units}
+            unitItems={unitItems}
             isAdmin={isAdmin}
             isUnitObserver={isUnitObserver}
             searchQuery={searchQuery}
             onSearch={setSearchQuery}
             unitFilter={unitFilter}
             onUnitFilter={setUnitFilter}
+            itemFilter={itemFilter}
+            onItemFilter={setItemFilter}
             typeFilter={typeFilter}
             onTypeFilter={setTypeFilter}
             onExport={exportCSV}
-            onNewTx={() => setIsTxModalOpen(true)}
+            onNewTx={(uId, itId) => setTxModalContext({ unitId: uId || '', itemId: itId || '' })}
             onUpdateTx={handleUpdateTransaction}
             onDeleteTx={handleDeleteTransaction}
           />
@@ -767,11 +811,13 @@ export default function App() {
         )}
       </main>
 
-      {isTxModalOpen && isAdmin && (
+      {txModalContext && isAdmin && (
         <TxModal
           units={units}
-          defaultUnitId={unitFilter !== 'ALL' ? unitFilter : statementUnitId}
-          onClose={() => setIsTxModalOpen(false)}
+          unitItems={unitItems}
+          defaultUnitId={txModalContext.unitId || (unitFilter !== 'ALL' ? unitFilter : statementUnitId)}
+          defaultItemId={txModalContext.itemId || ''}
+          onClose={() => setTxModalContext(null)}
           onSubmit={handleCreateTransaction}
         />
       )}

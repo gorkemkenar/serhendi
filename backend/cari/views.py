@@ -390,10 +390,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return Transaction.objects.none()
 
         qs = _restrict_to_user_unit(
-            Transaction.objects.select_related('unit'), user, 'unit_id'
+            Transaction.objects.select_related('unit', 'item'), user, 'unit_id'
         )
         if requested_unit:
             qs = qs.filter(unit_id=requested_unit)
+        if params.get('item'):
+            qs = qs.filter(item_id=params['item'])
+        if params.get('category'):
+            qs = qs.filter(category__iexact=params['category'])
         if params.get('type'):
             qs = qs.filter(type=params['type'])
         if params.get('search'):
@@ -408,31 +412,69 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 )
                 return Transaction.objects.none()
             # 3. Enjeksiyon: Django ORM parametrik sorguları (Prepared Statements) kullanılır
-            qs = qs.filter(Q(description__icontains=q) | Q(id__icontains=q) | Q(unit__name__icontains=q))
+            qs = qs.filter(
+                Q(description__icontains=q)
+                | Q(id__icontains=q)
+                | Q(unit__name__icontains=q)
+                | Q(category__icontains=q)
+                | Q(item__name__icontains=q)
+            )
         return qs
 
     def perform_create(self, serializer):
         tx = serializer.save(created_by=self.request.user.display_name)
+        if tx.item_id:
+            item = UnitItem.objects.filter(pk=tx.item_id).first()
+            if item:
+                item.debt = (item.debt or 0) + (tx.debt or 0)
+                item.paid = (item.paid or 0) + (tx.credit or 0)
+                item.save(update_fields=['debt', 'paid'])
         log_security_event(
             action='TX_CREATED',
             severity='INFO',
             request=self.request,
             user=self.request.user,
-            description=f'Yeni cari hareket eklendi: {tx.id} ({tx.unit_id} - {tx.type}) [İmza: {tx.integrity_hash[:12]}...]',
+            description=f'Yeni cari hareket eklendi: {tx.id} ({tx.unit_id} / Kalem: {tx.category} - {tx.type})',
         )
 
     def perform_update(self, serializer):
+        old_tx = self.get_object()
+        old_item_id = old_tx.item_id
+        old_debt = old_tx.debt or 0
+        old_credit = old_tx.credit or 0
+
         tx = serializer.save()
+
+        if old_item_id:
+            old_item = UnitItem.objects.filter(pk=old_item_id).first()
+            if old_item:
+                old_item.debt = max(0, (old_item.debt or 0) - old_debt)
+                old_item.paid = max(0, (old_item.paid or 0) - old_credit)
+                old_item.save(update_fields=['debt', 'paid'])
+
+        if tx.item_id:
+            new_item = UnitItem.objects.filter(pk=tx.item_id).first()
+            if new_item:
+                new_item.debt = (new_item.debt or 0) + (tx.debt or 0)
+                new_item.paid = (new_item.paid or 0) + (tx.credit or 0)
+                new_item.save(update_fields=['debt', 'paid'])
+
         log_security_event(
             action='TX_UPDATED',
             severity='INFO',
             request=self.request,
             user=self.request.user,
-            description=f'Cari hareket güncellendi ve yeniden imzalandı: {tx.id}.',
+            description=f'Cari hareket güncellendi ve yeniden imzalandı: {tx.id} (Kalem: {tx.category}).',
         )
 
     def perform_destroy(self, instance):
         tid = instance.id
+        if instance.item_id:
+            item = UnitItem.objects.filter(pk=instance.item_id).first()
+            if item:
+                item.debt = max(0, (item.debt or 0) - (instance.debt or 0))
+                item.paid = max(0, (item.paid or 0) - (instance.credit or 0))
+                item.save(update_fields=['debt', 'paid'])
         instance.delete()
         log_security_event(
             action='TX_DELETED',
