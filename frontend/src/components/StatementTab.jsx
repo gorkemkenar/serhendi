@@ -98,25 +98,25 @@ export default function StatementTab({
               </div>
             </div>
 
-            {/* ALT ALTA TOPLAM BORÇ / ÖDENEN / KALAN BAKİYE */}
-            <div className="flex flex-col gap-2 min-w-[220px]">
-              <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-xl bg-rose-50 border border-rose-100">
-                <span className="text-xs font-bold text-rose-700">Toplam Borç</span>
-                <span className="text-sm font-black text-rose-600 tabular-nums">{formatTRY(report.totalDebt)}</span>
+            {/* YAN YANA EŞİT TOPLAM BORÇ / ÖDENEN / KALAN BAKİYE */}
+            <div className="grid grid-cols-3 gap-2.5 sm:min-w-[420px]">
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 text-center">
+                <div className="text-[11px] font-bold uppercase text-rose-700">Toplam Borç</div>
+                <div className="text-sm sm:text-base font-black text-rose-600 tabular-nums mt-0.5">{formatTRY(report.totalDebt)}</div>
               </div>
-              <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-100">
-                <span className="text-xs font-bold text-[#0f6b36]">Toplam Ödenen</span>
-                <span className="text-sm font-black text-[#0f6b36] tabular-nums">{formatTRY(report.totalCredit)}</span>
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-center">
+                <div className="text-[11px] font-bold uppercase text-[#0f6b36]">Toplam Ödenen</div>
+                <div className="text-sm sm:text-base font-black text-[#0f6b36] tabular-nums mt-0.5">{formatTRY(report.totalCredit)}</div>
               </div>
-              <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-xl bg-slate-900">
-                <span className="text-xs font-bold text-slate-200">Kalan Bakiye</span>
-                <span
-                  className={`text-base sm:text-lg font-black mt-0.5 tabular-nums ${
+              <div className="p-3 rounded-xl bg-slate-900 text-center">
+                <div className="text-[11px] font-bold uppercase text-slate-200">Kalan Bakiye</div>
+                <div
+                  className={`text-sm sm:text-base font-black mt-0.5 tabular-nums ${
                     report.netBalance > 0 ? 'text-rose-400' : 'text-emerald-400'
                   }`}
                 >
                   {formatTRY(report.netBalance)}
-                </span>
+                </div>
               </div>
             </div>
           </div>
