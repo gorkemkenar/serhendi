@@ -21,7 +21,6 @@ export default function ItemDetailModal({
   const paid = Number(item.paid) || 0;
   const remaining = debt - paid;
 
-  // Bu kaleme ait tüm cari hareketleri filtrele ve tarihe göre sırala
   const itemTxs = transactions
     .filter(
       (t) =>
@@ -59,23 +58,15 @@ export default function ItemDetailModal({
 
   return (
     <Modal
-      title={`${item.name} — Yapılan Hareketler`}
+      title={`${item.name} — Hareketler`}
       icon={<IconFileText />}
       onClose={onClose}
       maxWidth="max-w-2xl"
     >
-      <div className="space-y-4">
-        {/* KALEM AİDİYET & DETAY BİLGİSİ */}
-        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="text-xs space-y-0.5">
-            <div className="font-bold text-slate-800">
-              Cari / Birim: <span className="text-[#0f6b36]">{unit?.name || item.unitName || item.unitId}</span>
-            </div>
-            {item.description && (
-              <div className="text-slate-500">
-                <b>Cari Detay:</b> {item.description}
-              </div>
-            )}
+      <div className="space-y-3.5">
+        <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+          <div className="text-xs font-bold text-slate-800 truncate">
+            Cari: <span className="text-[#0f6b36]">{unit?.name || item.unitName || item.unitId}</span>
           </div>
           {isAdmin && (
             <button
@@ -84,28 +75,28 @@ export default function ItemDetailModal({
                 onClose();
                 onNewTx?.(item.unitId, item.id);
               }}
-              className={`${primaryBtn} px-3.5 py-2 text-xs whitespace-nowrap`}
+              className={`${primaryBtn} px-3 py-1.5 text-xs whitespace-nowrap`}
             >
               <IconPlus className="w-3.5 h-3.5" />
-              Bu Kaleme Hareket Ekle
+              Hareket Ekle
             </button>
           )}
         </div>
 
-        {/* BORÇ | ÖDENEN | KALAN ÖZET KUTULARI */}
-        <div className="grid grid-cols-3 gap-2.5 text-center">
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-100">
-            <div className="text-[11px] font-bold uppercase text-rose-700">Toplam Borç</div>
-            <div className="text-sm sm:text-base font-black text-rose-600 tabular-nums mt-0.5">{formatTRY(debt)}</div>
+        {/* YAN YANA EŞİT BORÇ | ÖDENEN | KALAN */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 text-center">
+          <div className="p-2 sm:p-3 rounded-xl bg-rose-50 border border-rose-100 min-w-0">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase text-rose-700 truncate">Borç</div>
+            <div className="text-xs sm:text-base font-black text-rose-600 tabular-nums mt-0.5 truncate">{formatTRY(debt)}</div>
           </div>
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-            <div className="text-[11px] font-bold uppercase text-[#0f6b36]">Toplam Ödenen</div>
-            <div className="text-sm sm:text-base font-black text-[#0f6b36] tabular-nums mt-0.5">{formatTRY(paid)}</div>
+          <div className="p-2 sm:p-3 rounded-xl bg-emerald-50 border border-emerald-100 min-w-0">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase text-[#0f6b36] truncate">Ödenen</div>
+            <div className="text-xs sm:text-base font-black text-[#0f6b36] tabular-nums mt-0.5 truncate">{formatTRY(paid)}</div>
           </div>
-          <div className="p-3 rounded-xl bg-slate-900 text-white">
-            <div className="text-[11px] font-bold uppercase text-slate-300">Kalan Borç</div>
+          <div className="p-2 sm:p-3 rounded-xl bg-slate-900 text-white min-w-0">
+            <div className="text-[10px] sm:text-[11px] font-bold uppercase text-slate-300 truncate">Kalan</div>
             <div
-              className={`text-sm sm:text-base font-black tabular-nums mt-0.5 ${
+              className={`text-xs sm:text-base font-black tabular-nums mt-0.5 truncate ${
                 remaining > 0 ? 'text-rose-400' : 'text-emerald-400'
               }`}
             >
@@ -114,167 +105,124 @@ export default function ItemDetailModal({
           </div>
         </div>
 
-        {/* BU KALEME YAPILAN HAREKETLER LİSTESİ */}
+        {/* HAREKETLER LİSTESİ (MOBİL UYUMLU KART/LİSTE) */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-              {item.name} Kalemine Yapılan Hareketler ({itemTxs.length})
-            </h4>
-          </div>
-
           {itemTxs.length === 0 ? (
             <div className="p-6 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500">
               Bu kaleme ait kayıtlı cari hareket bulunmuyor.
-              {isAdmin && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onNewTx?.(item.unitId, item.id);
-                    }}
-                    className="text-[#0f6b36] font-bold hover:underline cursor-pointer"
-                  >
-                    + İlk hareketi eklemek için tıklayın
-                  </button>
-                </div>
-              )}
             </div>
           ) : (
-            <div className="border border-slate-200 rounded-xl overflow-hidden">
-              <div className="overflow-x-auto max-h-80">
-                <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 text-left">
-                      <th className="py-2.5 px-3 font-bold border-b border-slate-200">Tarih</th>
-                      <th className="py-2.5 px-3 font-bold border-b border-slate-200">Tür</th>
-                      <th className="py-2.5 px-3 font-bold border-b border-slate-200">Açıklama</th>
-                      <th className="py-2.5 px-3 font-bold border-b border-slate-200 text-right">Borç (₺)</th>
-                      <th className="py-2.5 px-3 font-bold border-b border-slate-200 text-right">Ödenen (₺)</th>
-                      {isAdmin && <th className="py-2.5 px-2.5 font-bold border-b border-slate-200 text-right">İşlem</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {itemTxs.map((tx) => {
-                      const tObj = TRANSACTION_TYPES.find((t) => t.label === tx.type);
-                      const txDebt = Number(tx.debt) || 0;
-                      const txCredit = Number(tx.credit) || 0;
-                      const isEditing = isAdmin && editTx?.id === tx.id;
-                      return (
-                        <tr key={tx.id} className={isEditing ? 'bg-amber-50/50' : 'hover:bg-slate-50'}>
-                          <td className="py-2.5 px-3 whitespace-nowrap">
-                            {isEditing ? (
-                              <input
-                                type="date"
-                                value={editTx.date}
-                                onChange={(e) => setEditTx({ ...editTx, date: e.target.value })}
-                                className="px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                              />
-                            ) : (
-                              <div className="font-semibold text-slate-800">{tx.date}</div>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap">
-                            {isEditing ? (
-                              <select
-                                value={editTx.type}
-                                onChange={(e) => setEditTx({ ...editTx, type: e.target.value })}
-                                className="px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                              >
-                                {TRANSACTION_TYPES.map((t) => (
-                                  <option key={t.label} value={t.label}>
-                                    {t.label}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span
-                                className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                                  tObj?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
-                                }`}
-                              >
-                                {tx.type}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-slate-700">
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                value={editTx.description}
-                                onChange={(e) => setEditTx({ ...editTx, description: e.target.value })}
-                                className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                              />
-                            ) : (
-                              <div>{tx.description}</div>
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-bold tabular-nums text-rose-600 whitespace-nowrap">
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={editTx.amount}
-                                onChange={(e) => setEditTx({ ...editTx, amount: e.target.value })}
-                                className="w-24 px-2 py-1 text-xs text-right border border-slate-300 rounded bg-white"
-                              />
-                            ) : txDebt > 0 ? (
-                              formatTRY(txDebt)
-                            ) : (
-                              '-'
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-bold tabular-nums text-[#0f6b36] whitespace-nowrap">
-                            {isEditing ? '-' : txCredit > 0 ? formatTRY(txCredit) : '-'}
-                          </td>
+            <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-80 overflow-y-auto">
+              {itemTxs.map((tx) => {
+                const tObj = TRANSACTION_TYPES.find((t) => t.label === tx.type);
+                const txDebt = Number(tx.debt) || 0;
+                const txCredit = Number(tx.credit) || 0;
+                const isEditing = isAdmin && editTx?.id === tx.id;
+
+                return (
+                  <div key={tx.id} className="p-2.5 sm:p-3 text-xs">
+                    {isEditing ? (
+                      <form onSubmit={saveEditTx} className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="date"
+                            value={editTx.date}
+                            onChange={(e) => setEditTx({ ...editTx, date: e.target.value })}
+                            className="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                          />
+                          <select
+                            value={editTx.type}
+                            onChange={(e) => setEditTx({ ...editTx, type: e.target.value })}
+                            className="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                          >
+                            {TRANSACTION_TYPES.map((t) => (
+                              <option key={t.label} value={t.label}>
+                                {t.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={editTx.description}
+                            onChange={(e) => setEditTx({ ...editTx, description: e.target.value })}
+                            placeholder="Açıklama"
+                            className="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                          />
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editTx.amount}
+                            onChange={(e) => setEditTx({ ...editTx, amount: e.target.value })}
+                            placeholder="Tutar (₺)"
+                            className="px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums"
+                          />
+                        </div>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="submit"
+                            className="flex-1 py-1.5 rounded-lg bg-[#0f6b36] text-white font-bold cursor-pointer"
+                          >
+                            Kaydet
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditTx(null)}
+                            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold cursor-pointer"
+                          >
+                            İptal
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                tObj?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
+                              }`}
+                            >
+                              {tx.type}
+                            </span>
+                            <span className="text-[11px] text-slate-400">{tx.date}</span>
+                          </div>
+                          <div className="text-slate-800 font-medium truncate">{tx.description}</div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className={`font-black tabular-nums ${
+                              txDebt > 0 ? 'text-rose-600' : 'text-[#0f6b36]'
+                            }`}
+                          >
+                            {txDebt > 0 ? `+${formatTRY(txDebt)}` : `-${formatTRY(txCredit)}`}
+                          </span>
                           {isAdmin && (
-                            <td className="py-2.5 px-2.5 text-right whitespace-nowrap">
-                              {isEditing ? (
-                                <div className="inline-flex gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={saveEditTx}
-                                    className="px-2 py-1 rounded bg-[#0f6b36] text-white text-[11px] font-bold cursor-pointer"
-                                  >
-                                    Kaydet
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditTx(null)}
-                                    className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold cursor-pointer"
-                                  >
-                                    İptal
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="inline-flex gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => startEditTx(tx)}
-                                    className="p-1 text-slate-400 hover:text-slate-800 cursor-pointer"
-                                    title="Hareketi Düzenle"
-                                  >
-                                    <IconEdit className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => onDeleteTx?.(tx)}
-                                    className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                                    title="Hareketi Sil"
-                                  >
-                                    <IconTrash className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              )}
-                            </td>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEditTx(tx)}
+                                className="p-1 text-slate-400 hover:text-slate-800 cursor-pointer"
+                              >
+                                <IconEdit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDeleteTx?.(tx)}
+                                className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                              >
+                                <IconTrash className="w-3.5 h-3.5" />
+                              </button>
+                            </>
                           )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

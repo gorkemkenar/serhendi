@@ -739,24 +739,24 @@ export default function App() {
           </div>
         )}
 
-        {/* KPI KARTLARI */}
-        <section className="no-print grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        {/* KPI KARTLARI (MOBİLDE YAN YANA 3 EŞİT KUTU) */}
+        <section className="no-print grid grid-cols-3 gap-2 sm:gap-4">
           <KpiCard
-            title="Toplam Borç / Sevkiyat"
+            title="Toplam Borç"
             value={formatTRY(kpiStats.totalDebt)}
             valueCls="text-rose-600"
             icon={<IconArrowUpRight />}
             iconCls="bg-rose-50 text-rose-600"
           />
           <KpiCard
-            title="Toplam Alacak / Ödeme"
+            title="Toplam Ödenen"
             value={formatTRY(kpiStats.totalCredit)}
             valueCls="text-[#0f6b36]"
             icon={<IconArrowDownLeft />}
             iconCls="bg-emerald-50 text-[#0f6b36]"
           />
           <KpiCard
-            title="Net Bakiye Durumu"
+            title="Kalan Bakiye"
             value={formatTRY(kpiStats.netBalance)}
             valueCls={kpiStats.netBalance > 0 ? 'text-rose-600' : 'text-[#0f6b36]'}
             icon={<IconCheck className="w-5 h-5" />}
@@ -891,12 +891,12 @@ export default function App() {
 
 function KpiCard({ title, value, valueCls, icon, iconCls }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+    <div className="bg-white border border-slate-200 rounded-2xl p-2.5 sm:p-4 shadow-sm flex items-center justify-between gap-2 min-w-0">
       <div className="min-w-0">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</div>
-        <div className={`text-xl sm:text-2xl font-black mt-1 tabular-nums truncate ${valueCls}`}>{value}</div>
+        <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 truncate">{title}</div>
+        <div className={`text-xs sm:text-2xl font-black mt-0.5 sm:mt-1 tabular-nums truncate ${valueCls}`}>{value}</div>
       </div>
-      <div className={`p-2.5 rounded-xl shrink-0 ${iconCls}`}>{icon}</div>
+      <div className={`hidden sm:flex p-2.5 rounded-xl shrink-0 ${iconCls}`}>{icon}</div>
     </div>
   );
 }

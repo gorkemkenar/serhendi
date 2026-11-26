@@ -5,17 +5,8 @@ import { formatTRY, primaryBtn } from '../constants.js';
 const balanceBadge = (n) =>
   n > 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-[#0f6b36] border-emerald-200';
 
-const PRESET_ITEMS = [
-  { name: 'Kumanya' },
-  { name: 'Kandil Simidi' },
-  { name: 'Patates' },
-  { name: 'Kurban' },
-  { name: 'Takvim / Dergi' }
-];
-
 export default function UnitsTab({
   units,
-  transactions = [],
   isAdmin,
   isUnitObserver,
   search,
@@ -102,10 +93,9 @@ export default function UnitsTab({
     const form = getNewForm(u.id);
 
     return (
-      <div className="p-3.5 sm:p-4 bg-slate-50/90 border-t border-slate-200 space-y-3">
-        {/* KALEM KARTLARI (SADE: KALEM ADI + BORÇ / ÖDENEN / KALAN) */}
+      <div className="p-3 sm:p-4 bg-slate-50/90 border-t border-slate-200 space-y-2.5 w-full max-w-full overflow-hidden">
         {items.length === 0 ? (
-          <div className="p-4 rounded-xl bg-white border border-slate-200 text-center text-xs text-slate-500">
+          <div className="p-3 rounded-xl bg-white border border-slate-200 text-center text-xs text-slate-500">
             Henüz kalem eklenmemiş.
           </div>
         ) : (
@@ -119,7 +109,7 @@ export default function UnitsTab({
               return (
                 <div
                   key={item.id}
-                  className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs flex flex-col justify-between gap-2"
+                  className="bg-white border border-slate-200 rounded-xl p-2.5 sm:p-3 shadow-xs flex flex-col justify-between gap-2 min-w-0"
                 >
                   {isEditingThis ? (
                     <form onSubmit={handleSaveEditItem} className="space-y-2">
@@ -176,8 +166,7 @@ export default function UnitsTab({
                     </form>
                   ) : (
                     <>
-                      {/* ÜST BAŞLIK: SADE KALEM ADI + İŞLEM BUTONLARI */}
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2 min-w-0">
                         <div
                           onClick={() => onSelectItem?.(item, u)}
                           className="cursor-pointer group flex-1 truncate"
@@ -223,23 +212,22 @@ export default function UnitsTab({
                         )}
                       </div>
 
-                      {/* BORÇ | ÖDENEN | KALAN */}
                       <div
                         onClick={() => onSelectItem?.(item, u)}
                         className="grid grid-cols-3 gap-1.5 text-center cursor-pointer"
                       >
-                        <div className="p-2 rounded-lg bg-rose-50/70 border border-rose-100 hover:border-rose-300">
+                        <div className="p-1.5 sm:p-2 rounded-lg bg-rose-50/70 border border-rose-100 hover:border-rose-300 min-w-0">
                           <div className="text-[10px] font-bold uppercase text-rose-700">Borç</div>
-                          <div className="text-xs font-extrabold text-rose-600 tabular-nums mt-0.5">{formatTRY(debt)}</div>
+                          <div className="text-[11px] sm:text-xs font-extrabold text-rose-600 tabular-nums mt-0.5 truncate">{formatTRY(debt)}</div>
                         </div>
-                        <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300">
+                        <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300 min-w-0">
                           <div className="text-[10px] font-bold uppercase text-[#0f6b36]">Ödenen</div>
-                          <div className="text-xs font-extrabold text-[#0f6b36] tabular-nums mt-0.5">{formatTRY(paid)}</div>
+                          <div className="text-[11px] sm:text-xs font-extrabold text-[#0f6b36] tabular-nums mt-0.5 truncate">{formatTRY(paid)}</div>
                         </div>
-                        <div className="p-2 rounded-lg bg-slate-100 border border-slate-200 hover:border-slate-300">
+                        <div className="p-1.5 sm:p-2 rounded-lg bg-slate-100 border border-slate-200 hover:border-slate-300 min-w-0">
                           <div className="text-[10px] font-bold uppercase text-slate-600">Kalan</div>
                           <div
-                            className={`text-xs font-black tabular-nums mt-0.5 ${
+                            className={`text-[11px] sm:text-xs font-black tabular-nums mt-0.5 truncate ${
                               rem > 0 ? 'text-rose-700' : 'text-[#0f6b36]'
                             }`}
                           >
@@ -255,11 +243,10 @@ export default function UnitsTab({
           </div>
         )}
 
-        {/* YENİ KALEM EKLEME FORMU (SADE: KALEM ADI + BORÇ + ÖDENEN + EKLE) */}
         {isAdmin && (
           <form
             onSubmit={(e) => handleAddItem(e, u.id)}
-            className="p-2.5 rounded-xl bg-white border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-2 items-center"
+            className="p-2.5 rounded-xl bg-white border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 items-center"
           >
             <input
               type="text"
@@ -267,7 +254,7 @@ export default function UnitsTab({
               placeholder="Kalem Adı (Örn: Kumanya)"
               value={form.name}
               onChange={(e) => setNewForm(u.id, { name: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"
+              className="col-span-2 sm:col-span-1 w-full px-2.5 py-2 sm:py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"
             />
             <input
               type="number"
@@ -276,7 +263,7 @@ export default function UnitsTab({
               placeholder="Borç (₺)"
               value={form.debt}
               onChange={(e) => setNewForm(u.id, { debt: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums focus:outline-none focus:border-[#0f6b36]"
+              className="w-full px-2.5 py-2 sm:py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums focus:outline-none focus:border-[#0f6b36]"
             />
             <input
               type="number"
@@ -285,11 +272,11 @@ export default function UnitsTab({
               placeholder="Ödenen (₺)"
               value={form.paid}
               onChange={(e) => setNewForm(u.id, { paid: e.target.value })}
-              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums focus:outline-none focus:border-[#0f6b36]"
+              className="w-full px-2.5 py-2 sm:py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums focus:outline-none focus:border-[#0f6b36]"
             />
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
+              className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
             >
               <IconPlus className="w-3.5 h-3.5" />
               Kalem Ekle
@@ -301,69 +288,204 @@ export default function UnitsTab({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
-      {/* Başlık & araçlar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 border-b border-slate-100">
-        <h2 className="text-base font-extrabold text-slate-900">Cariler, Kalem Detayları & Güncel Bakiyeler</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex p-1 rounded-lg bg-slate-100">
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      {/* ÜST BAŞLIK & ARAÇLAR (MOBİL UYUMLU) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 sm:p-4 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm sm:text-base font-extrabold text-slate-900">Cariler & Bakiyeler</h2>
+          <div className="hidden md:inline-flex p-1 rounded-lg bg-slate-100">
             <button
               onClick={() => onViewMode('table')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${viewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-                }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
+                viewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              }`}
             >
               <IconTable className="w-3.5 h-3.5" />
               Tablo
             </button>
             <button
               onClick={() => onViewMode('grid')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-                }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
+                viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              }`}
             >
               <IconGrid className="w-3.5 h-3.5" />
               Kartlar
             </button>
           </div>
+        </div>
 
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {!isUnitObserver && (
-            <div className="relative">
+            <div className="relative flex-1 sm:w-56">
               <IconSearch className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Cari, yetkili veya kalem ara..."
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#0f6b36]"
+                className="w-full pl-8 pr-3 py-2 sm:py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#0f6b36]"
               />
             </div>
           )}
 
           {isAdmin && (
-            <>
+            <div className="grid grid-cols-2 sm:flex items-center gap-2">
               <button
                 onClick={onNewUnit}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 cursor-pointer whitespace-nowrap"
               >
                 <IconPlus />
-                Yeni Cari / Birim
+                Yeni Cari
               </button>
-              <button onClick={() => onNewTx()} className={`${primaryBtn} px-4 py-2 text-xs sm:text-sm`}>
+              <button onClick={() => onNewTx()} className={`${primaryBtn} px-3.5 py-2 text-xs whitespace-nowrap`}>
                 <IconPlus />
                 Yeni Hareket
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
 
-      {units.length === 0 && <div className="p-10 text-center text-sm text-slate-500">Gösterilecek cari / birim bulunamadı.</div>}
+      {units.length === 0 && (
+        <div className="p-10 text-center text-sm text-slate-500">Gösterilecek cari / birim bulunamadı.</div>
+      )}
 
+      {/* MOBİL GÖRÜNÜM (< md): YATAY TAŞMA OLMAYAN TAM EKRAN KART LİSTESİ */}
+      {units.length > 0 && (
+        <div className="md:hidden divide-y divide-slate-200">
+          {units.map((u) => {
+            const editing = isAdmin && quick?.id === u.id;
+            const open = isExpanded(u.id);
+            const itemCount = (u.items || []).length;
+
+            return (
+              <div key={u.id} className="bg-white">
+                <div className="p-3.5 space-y-2.5">
+                  {editing ? (
+                    <form onSubmit={saveQuick} className="space-y-2">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={quick.name}
+                        onChange={(e) => setQuick({ ...quick, name: e.target.value })}
+                        placeholder="Cari / Birim Adı"
+                        className="w-full px-2.5 py-1.5 text-sm font-bold border border-[#0f6b36] rounded-lg bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={quick.contact}
+                        onChange={(e) => setQuick({ ...quick, contact: e.target.value })}
+                        placeholder="Yetkili Adı"
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                      />
+                      <div className="flex gap-1.5">
+                        <button
+                          type="submit"
+                          className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] text-white cursor-pointer"
+                        >
+                          Kaydet
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQuick(null)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 cursor-pointer"
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0" onClick={() => toggleExpand(u.id)}>
+                        <div className="font-extrabold text-slate-900 text-sm truncate">{u.name}</div>
+                        <div className="text-xs text-slate-500 truncate">{u.contact}</div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(u.id)}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                            open
+                              ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
+                              : 'bg-emerald-50 text-[#0f6b36] border-emerald-200'
+                          }`}
+                        >
+                          Kalemler ({itemCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onShowStatement(u.id)}
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 cursor-pointer"
+                        >
+                          Ekstre
+                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => onEditUnit(u)}
+                              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+                            >
+                              <IconEdit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteUnit(u)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                            >
+                              <IconTrash />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* YAN YANA EŞİT BORÇ | ÖDENEN | KALAN KUTULARI */}
+                  <div
+                    onClick={() => toggleExpand(u.id)}
+                    className="grid grid-cols-3 gap-1.5 text-center cursor-pointer"
+                  >
+                    <div className="p-2 rounded-xl bg-rose-50/70 border border-rose-100 min-w-0">
+                      <div className="text-[10px] font-bold uppercase text-rose-700">Borç</div>
+                      <div className="text-xs font-extrabold text-rose-600 tabular-nums mt-0.5 truncate">
+                        {formatTRY(u.totalDebt)}
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-100 min-w-0">
+                      <div className="text-[10px] font-bold uppercase text-[#0f6b36]">Ödenen</div>
+                      <div className="text-xs font-extrabold text-[#0f6b36] tabular-nums mt-0.5 truncate">
+                        {formatTRY(u.totalCredit)}
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-100 border border-slate-200 min-w-0">
+                      <div className="text-[10px] font-bold uppercase text-slate-600">Kalan</div>
+                      <div
+                        className={`text-xs font-black tabular-nums mt-0.5 truncate ${
+                          u.netBalance > 0 ? 'text-rose-700' : 'text-[#0f6b36]'
+                        }`}
+                      >
+                        {formatTRY(u.netBalance)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {open && renderUnitItemsPanel(u)}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* MASAÜSTÜ TABLO GÖRÜNÜMÜ (md+) */}
       {units.length > 0 && viewMode === 'table' && (
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 text-left">
-                <th className="py-2.5 px-4 font-bold">Cari / Birim & Kalem Özeti</th>
+                <th className="py-2.5 px-4 font-bold">Cari / Birim</th>
                 <th className="py-2.5 px-4 font-bold">Yetkili</th>
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Borç (₺)</th>
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Ödenen (₺)</th>
@@ -379,7 +501,7 @@ export default function UnitsTab({
                 return (
                   <Fragment key={u.id}>
                     <tr className={editing ? 'bg-amber-50/50' : open ? 'bg-emerald-50/30' : 'hover:bg-slate-50/70'}>
-                      <td className="py-3 px-4 min-w-[220px]">
+                      <td className="py-3 px-4">
                         {editing ? (
                           <input
                             type="text"
@@ -394,13 +516,12 @@ export default function UnitsTab({
                           <div
                             onClick={() => toggleExpand(u.id)}
                             className="cursor-pointer group"
-                            title="Kalem detaylarını açmak / kapatmak için tıklayın"
                           >
                             <div className="font-bold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">{u.name}</div>
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-slate-700 text-xs min-w-[130px]">
+                      <td className="py-3 px-4 text-slate-700 text-xs">
                         {editing ? (
                           <input
                             type="text"
@@ -414,7 +535,6 @@ export default function UnitsTab({
                           <span
                             onClick={() => startQuick(u)}
                             className={isAdmin ? 'cursor-pointer hover:text-[#0f6b36] hover:underline font-medium' : ''}
-                            title={isAdmin ? 'Yetkili adını düzenlemek için tıklayın' : ''}
                           >
                             {u.contact}
                           </span>
@@ -450,10 +570,11 @@ export default function UnitsTab({
                             <button
                               type="button"
                               onClick={() => toggleExpand(u.id)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer whitespace-nowrap ${open
-                                ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
-                                : 'bg-emerald-50 text-[#0f6b36] border-emerald-200 hover:bg-emerald-100'
-                                }`}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer whitespace-nowrap ${
+                                open
+                                  ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
+                                  : 'bg-emerald-50 text-[#0f6b36] border-emerald-200 hover:bg-emerald-100'
+                              }`}
                             >
                               Kalemler ({itemCount})
                             </button>
@@ -502,8 +623,9 @@ export default function UnitsTab({
         </div>
       )}
 
+      {/* MASAÜSTÜ KARTLAR GÖRÜNÜMÜ (md+) */}
       {units.length > 0 && viewMode === 'grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           {units.map((u) => {
             const editing = isAdmin && quick?.id === u.id;
             const open = isExpanded(u.id);
@@ -511,11 +633,6 @@ export default function UnitsTab({
             return (
               <div key={u.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
                 <div className="p-4 flex flex-col flex-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-2">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{u.name}</span>
-                    <span>{itemCount} kalem</span>
-                  </div>
-
                   {editing ? (
                     <form onSubmit={saveQuick} className="space-y-2 mb-3">
                       <div>
@@ -558,69 +675,34 @@ export default function UnitsTab({
                       >
                         {u.name}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">Yetkili: {u.contact}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">{u.contact}</div>
                     </div>
                   )}
 
-                  {/* KART İÇİNDE KALEM ÖZET LİSTESİ */}
-                  {(u.items || []).length > 0 && (
-                    <div className="mb-3 space-y-1.5 border-t border-slate-100 pt-2.5">
-                      {(u.items || []).map((item) => {
-                        const d = Number(item.debt) || 0;
-                        const p = Number(item.paid) || 0;
-                        const r = d - p;
-                        return (
-                          <div
-                            key={item.id}
-                            onClick={() => onSelectItem?.(item, u)}
-                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 hover:border-[#0f6b36] text-xs space-y-1 cursor-pointer transition"
-                            title="Bu kaleme yapılan hareketleri görmek için tıklayın"
-                          >
-                            <div className="font-bold text-slate-900">{item.name}</div>
-                            <div className="grid grid-cols-3 gap-1 text-[11px] tabular-nums pt-0.5">
-                              <div>
-                                <span className="text-slate-400">Borç: </span>
-                                <span className="font-bold text-rose-600">{formatTRY(d)}</span>
-                              </div>
-                              <div>
-                                <span className="text-slate-400">Ödenen: </span>
-                                <span className="font-bold text-[#0f6b36]">{formatTRY(p)}</span>
-                              </div>
-                              <div>
-                                <span className="text-slate-400">Kalan: </span>
-                                <span className={`font-extrabold ${r > 0 ? 'text-rose-700' : 'text-[#0f6b36]'}`}>{formatTRY(r)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                  <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                    <div className="p-2 rounded-xl bg-rose-50/70 border border-rose-100">
+                      <div className="text-[10px] font-bold uppercase text-rose-700">Borç</div>
+                      <div className="text-xs font-extrabold text-rose-600 tabular-nums mt-0.5">{formatTRY(u.totalDebt)}</div>
                     </div>
-                  )}
-
-                  <div className="space-y-1.5 text-xs border-t border-slate-100 pt-3 mt-auto">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Toplam Borç:</span>
-                      <span className="font-bold text-rose-600 tabular-nums">{formatTRY(u.totalDebt)}</span>
+                    <div className="p-2 rounded-xl bg-emerald-50/70 border border-emerald-100">
+                      <div className="text-[10px] font-bold uppercase text-[#0f6b36]">Ödenen</div>
+                      <div className="text-xs font-extrabold text-[#0f6b36] tabular-nums mt-0.5">{formatTRY(u.totalCredit)}</div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Toplam Ödenen:</span>
-                      <span className="font-bold text-[#0f6b36] tabular-nums">{formatTRY(u.totalCredit)}</span>
-                    </div>
-                    <div className="flex justify-between pt-1.5 border-t border-dashed border-slate-200">
-                      <span className="font-bold text-slate-700">Kalan Bakiye:</span>
-                      <span className={`font-black tabular-nums ${u.netBalance > 0 ? 'text-rose-600' : 'text-[#0f6b36]'}`}>
+                    <div className="p-2 rounded-xl bg-slate-100 border border-slate-200">
+                      <div className="text-[10px] font-bold uppercase text-slate-600">Kalan</div>
+                      <div className={`text-xs font-black tabular-nums mt-0.5 ${u.netBalance > 0 ? 'text-rose-700' : 'text-[#0f6b36]'}`}>
                         {formatTRY(u.netBalance)}
-                      </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-auto">
                     <button
                       type="button"
                       onClick={() => toggleExpand(u.id)}
                       className="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-[#0f6b36] border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
                     >
-                      {open ? 'Kalemleri Gizle' : `Kalem Detayları & Ekle (${itemCount})`}
+                      {open ? 'Kalemleri Gizle' : `Kalemler (${itemCount})`}
                     </button>
                     <button
                       type="button"
