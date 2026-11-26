@@ -357,7 +357,6 @@ export default function UnitsTab({
           {units.map((u) => {
             const editing = isAdmin && quick?.id === u.id;
             const open = isExpanded(u.id);
-            const itemCount = (u.items || []).length;
 
             return (
               <div key={u.id} className="bg-white">
@@ -397,48 +396,28 @@ export default function UnitsTab({
                     </form>
                   ) : (
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0" onClick={() => toggleExpand(u.id)}>
-                        <div className="font-extrabold text-slate-900 text-sm truncate">{u.name}</div>
+                      <div className="min-w-0 cursor-pointer" onClick={() => toggleExpand(u.id)}>
+                        <div className="font-extrabold text-slate-900 text-sm truncate hover:text-[#0f6b36]">{u.name}</div>
                         <div className="text-xs text-slate-500 truncate">{u.contact}</div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => toggleExpand(u.id)}
-                          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
-                            open
-                              ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
-                              : 'bg-emerald-50 text-[#0f6b36] border-emerald-200'
-                          }`}
-                        >
-                          Kalemler ({itemCount})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onShowStatement(u.id)}
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 cursor-pointer"
-                        >
-                          Ekstre
-                        </button>
-                        {isAdmin && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => onEditUnit(u)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
-                            >
-                              <IconEdit className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onDeleteUnit(u)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
-                            >
-                              <IconTrash />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                      {isAdmin && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => onEditUnit(u)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+                          >
+                            <IconEdit className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteUnit(u)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -490,14 +469,13 @@ export default function UnitsTab({
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Borç (₺)</th>
                 <th className="py-2.5 px-4 font-bold text-right">Toplam Ödenen (₺)</th>
                 <th className="py-2.5 px-4 font-bold text-right">Kalan Bakiye (₺)</th>
-                <th className="py-2.5 px-4 font-bold text-right">İşlemler</th>
+                {isAdmin && <th className="py-2.5 px-4 font-bold text-right">İşlemler</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {units.map((u) => {
                 const editing = isAdmin && quick?.id === u.id;
                 const open = isExpanded(u.id);
-                const itemCount = (u.items || []).length;
                 return (
                   <Fragment key={u.id}>
                     <tr className={editing ? 'bg-amber-50/50' : open ? 'bg-emerald-50/30' : 'hover:bg-slate-50/70'}>
@@ -540,77 +518,71 @@ export default function UnitsTab({
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold text-rose-600 tabular-nums whitespace-nowrap">{formatTRY(u.totalDebt)}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-[#0f6b36] tabular-nums whitespace-nowrap">{formatTRY(u.totalCredit)}</td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td
+                        onClick={() => !editing && toggleExpand(u.id)}
+                        className="py-3 px-4 text-right font-semibold text-rose-600 tabular-nums whitespace-nowrap cursor-pointer"
+                      >
+                        {formatTRY(u.totalDebt)}
+                      </td>
+                      <td
+                        onClick={() => !editing && toggleExpand(u.id)}
+                        className="py-3 px-4 text-right font-semibold text-[#0f6b36] tabular-nums whitespace-nowrap cursor-pointer"
+                      >
+                        {formatTRY(u.totalCredit)}
+                      </td>
+                      <td
+                        onClick={() => !editing && toggleExpand(u.id)}
+                        className="py-3 px-4 text-right whitespace-nowrap cursor-pointer"
+                      >
                         <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-extrabold border tabular-nums ${balanceBadge(u.netBalance)}`}>
                           {formatTRY(u.netBalance)}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        {editing ? (
-                          <div className="flex justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={saveQuick}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
-                            >
-                              Kaydet
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setQuick(null)}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                            >
-                              İptal
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => toggleExpand(u.id)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer whitespace-nowrap ${
-                                open
-                                  ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
-                                  : 'bg-emerald-50 text-[#0f6b36] border-emerald-200 hover:bg-emerald-100'
-                              }`}
-                            >
-                              Kalemler ({itemCount})
-                            </button>
-                            <button
-                              onClick={() => onShowStatement(u.id)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer whitespace-nowrap"
-                            >
-                              Ekstre
-                            </button>
-                            {isAdmin && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => onEditUnit(u)}
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
-                                  title="Cari Bilgilerini Düzenle"
-                                >
-                                  <IconEdit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onDeleteUnit(u)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
-                                  title="Cariyi Sil"
-                                >
-                                  <IconTrash />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </td>
+                      {isAdmin && (
+                        <td className="py-3 px-4">
+                          {editing ? (
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={saveQuick}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
+                              >
+                                Kaydet
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setQuick(null)}
+                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                              >
+                                İptal
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex justify-end items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => onEditUnit(u)}
+                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                                title="Cari Bilgilerini Düzenle"
+                              >
+                                <IconEdit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDeleteUnit(u)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                                title="Cariyi Sil"
+                              >
+                                <IconTrash />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      )}
                     </tr>
                     {open && (
                       <tr>
-                        <td colSpan={6} className="p-0">
+                        <td colSpan={isAdmin ? 6 : 5} className="p-0">
                           {renderUnitItemsPanel(u)}
                         </td>
                       </tr>
@@ -629,7 +601,6 @@ export default function UnitsTab({
           {units.map((u) => {
             const editing = isAdmin && quick?.id === u.id;
             const open = isExpanded(u.id);
-            const itemCount = (u.items || []).length;
             return (
               <div key={u.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
                 <div className="p-4 flex flex-col flex-1">
@@ -668,18 +639,36 @@ export default function UnitsTab({
                       </div>
                     </form>
                   ) : (
-                    <div className="mb-3">
-                      <div
-                        onClick={() => startQuick(u)}
-                        className={`text-base font-extrabold text-slate-900 ${isAdmin ? 'cursor-pointer hover:text-[#0f6b36]' : ''}`}
-                      >
-                        {u.name}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div onClick={() => toggleExpand(u.id)} className="cursor-pointer">
+                        <div className="text-base font-extrabold text-slate-900 hover:text-[#0f6b36]">{u.name}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{u.contact}</div>
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">{u.contact}</div>
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => onEditUnit(u)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+                          >
+                            <IconEdit className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteUnit(u)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-2 text-center mb-3">
+                  <div
+                    onClick={() => toggleExpand(u.id)}
+                    className="grid grid-cols-3 gap-2 text-center cursor-pointer"
+                  >
                     <div className="p-2 rounded-xl bg-rose-50/70 border border-rose-100">
                       <div className="text-[10px] font-bold uppercase text-rose-700">Borç</div>
                       <div className="text-xs font-extrabold text-rose-600 tabular-nums mt-0.5">{formatTRY(u.totalDebt)}</div>
@@ -694,23 +683,6 @@ export default function UnitsTab({
                         {formatTRY(u.netBalance)}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex gap-2 mt-auto">
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(u.id)}
-                      className="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-[#0f6b36] border border-emerald-200 hover:bg-emerald-100 cursor-pointer"
-                    >
-                      {open ? 'Kalemleri Gizle' : `Kalemler (${itemCount})`}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onShowStatement(u.id)}
-                      className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 cursor-pointer"
-                    >
-                      Ekstre
-                    </button>
                   </div>
                 </div>
                 {open && renderUnitItemsPanel(u)}
