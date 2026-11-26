@@ -11,6 +11,8 @@ router.register('users', views.UserViewSet, basename='user')
 
 urlpatterns = [
     path('health/', views.health_check_view, name='health-check'),
+    path('years/', views.fiscal_years_view, name='fiscal-years'),
+    path('years/<int:year>/', views.fiscal_year_delete_view, name='fiscal-year-delete'),
     path('auth/login/', views.LoginView.as_view(), name='login'),
     path('auth/logout/', views.logout_view, name='logout'),
     path('auth/me/', views.me_view, name='me'),

@@ -165,6 +165,21 @@ class User(AbstractUser):
         return self.full_name or self.username
 
 
+class FiscalYear(models.Model):
+    """Yıllık cari dönem (yalnızca Owner ve Baş Yönetici / Admin ekleyip silebilir)."""
+
+    year = models.PositiveSmallIntegerField('Dönem Yılı', primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['year']
+        verbose_name = 'Dönem Yılı'
+        verbose_name_plural = 'Dönem Yılları'
+
+    def __str__(self):
+        return str(self.year)
+
+
 class UnitItem(models.Model):
     """Cari içindeki kalem bazlı borç takibi (Örn: Kumanya, Kandil Simidi, Patates -> Borç / Ödenen / Kalan)."""
 

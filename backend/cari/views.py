@@ -17,7 +17,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .defaults import load_defaults
-from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
+from .models import FiscalYear, SecurityAuditLog, Transaction, Unit, UnitItem, User
 from .permissions import IsAdminRole, IsAdminRoleOrReadOnly
 from .security import (
     ALLOWED_EXTERNAL_DOMAINS,
@@ -235,6 +235,82 @@ def change_own_password_view(request):
 def health_check_view(request):
     """Yayınlama (Deployment) sağlık kontrolü uç noktası."""
     return Response({'status': 'ok', 'service': 'silivri-serhendi-cari-api', 'version': '1.0.0'})
+
+
+def _get_active_years():
+    cur = timezone.localdate().year
+    FiscalYear.objects.get_or_create(year=cur)
+    years = set(FiscalYear.objects.values_list('year', flat=True))
+    years.update(UnitItem.objects.values_list('year', flat=True))
+    for d in Transaction.objects.values_list('date', flat=True):
+        if d:
+            years.add(d.year)
+    return sorted(int(y) for y in years if y)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def fiscal_years_view(request):
+    """Dönem yıllarını listeler veya (yalnızca Owner ve Baş Yönetici / Admin) yeni yıl ekler."""
+    if request.method == 'GET':
+        return Response({'years': _get_active_years()})
+
+    if not request.user.is_super_admin_role:
+        return Response(
+            {'detail': 'Yıl ekleme ve silme yetkisi yalnızca Sistem Sahibi (Owner) ve Baş Yöneticiye (Admin) aittir.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    raw_year = request.data.get('year')
+    active_years = _get_active_years()
+    try:
+        year = int(raw_year) if raw_year else (max(active_years) + 1 if active_years else timezone.localdate().year + 1)
+    except (TypeError, ValueError):
+        return Response({'detail': 'Geçerli bir yıl girin.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if year < 2000 or year > 2100:
+        return Response({'detail': 'Yıl 2000 ile 2100 arasında olmalıdır.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    FiscalYear.objects.get_or_create(year=year)
+    log_security_event(
+        action='FISCAL_YEAR_CREATED',
+        severity='INFO',
+        request=request,
+        user=request.user,
+        description=f'{year} cari dönem yılı eklendi.',
+    )
+    return Response({'year': year, 'years': _get_active_years()}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def fiscal_year_delete_view(request, year: int):
+    """Seçilen dönem yılını ve o yıla ait tüm kalem/hareketleri siler (yalnızca Owner ve Baş Yönetici / Admin)."""
+    if not request.user.is_super_admin_role:
+        return Response(
+            {'detail': 'Yıl ekleme ve silme yetkisi yalnızca Sistem Sahibi (Owner) ve Baş Yöneticiye (Admin) aittir.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    active_years = _get_active_years()
+    if len(active_years) <= 1 and year in active_years:
+        return Response(
+            {'detail': 'Sistemde en az bir aktif dönem yılı kalmalıdır.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    deleted_txs, _ = Transaction.objects.filter(date__year=year).delete()
+    deleted_items, _ = UnitItem.objects.filter(year=year).delete()
+    FiscalYear.objects.filter(year=year).delete()
+
+    log_security_event(
+        action='FISCAL_YEAR_DELETED',
+        severity='WARNING',
+        request=request,
+        user=request.user,
+        description=f'{year} cari dönem yılı silindi ({deleted_items} kalem, {deleted_txs} hareket kaldırıldı).',
+    )
+    return Response({'deletedYear': year, 'years': _get_active_years()})
 
 
 @api_view(['POST'])

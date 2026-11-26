@@ -85,6 +85,12 @@ export const api = {
     request('/auth/change-password/', { method: 'POST', body: { currentPassword, newPassword } }),
   resetDefaults: () => request('/reset-defaults/', { method: 'POST' }),
 
+  years: {
+    list: () => request('/years/'),
+    create: (year) => request('/years/', { method: 'POST', body: year ? { year } : {} }),
+    remove: (year) => request(`/years/${encodeURIComponent(year)}/`, { method: 'DELETE' })
+  },
+
   twoFactor: {
     status: () => request('/auth/2fa/'),
     enable: (code) => request('/auth/2fa/', { method: 'POST', body: { action: 'enable', code } }),
