@@ -363,7 +363,7 @@ export default function StatementTab({
 
           {/* 2. BÖLÜM: TARİHSEL CARİ HAREKET GEÇMİŞİ (HANGİ KALEME AİT OLDUĞUYLA BİRLİKTE) */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
-            <h3 className="text-sm font-bold text-slate-700">Cari Hareket Geçmişi (Kalem Detaylı)</h3>
+            <h3 className="text-sm font-bold text-slate-700">Cari Hareket Geçmişi</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs sm:text-sm border-collapse">
                 <thead>

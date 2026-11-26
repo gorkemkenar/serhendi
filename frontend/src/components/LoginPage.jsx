@@ -134,11 +134,6 @@ export default function LoginPage({ onLogin }) {
             <IconLock />
             {busy ? 'Doğrulanıyor...' : requires2FA ? '2FA Kodunu Doğrula & Giriş Yap' : 'Giriş Yap'}
           </button>
-
-          <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-slate-400 pt-1">
-            <IconShield className="w-3.5 h-3.5 text-[#0f6b36]" />
-            <span>OWASP Top 10 • Brute-Force, SQLi & 2FA Korumalı</span>
-          </div>
         </form>
       </div>
     </div>

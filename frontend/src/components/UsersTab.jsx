@@ -98,16 +98,7 @@ export default function UsersTab({
           <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
             <IconUsers className="w-5 h-5" />
           </div>
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-900">Kullanıcı, Rol & Şifre Yönetimi</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isOwner
-                ? 'Sistem Sahibi (Owner): Baş Yönetici (Admin), Yönetici ve gözlemciler dahil tüm sistemi kontrol edebilirsiniz.'
-                : isSuperAdmin
-                  ? 'Baş Yönetici (Admin): Yöneticiler ve gözlemciler dahil hesaplara rol ve şifre atayabilirsiniz (Owner hesabına dokunulamaz).'
-                  : 'Yönetici: Gözlemci hesaplarına rol, birim ve şifre atayabilirsiniz (Yöneticileri yalnızca Owner ve Admin kontrol eder).'}
-            </p>
-          </div>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900">Kullanıcı, Rol & Şifre Yönetimi</h2>
         </div>
         <div className="flex items-center gap-2">
           {isSuperAdmin && (
@@ -194,10 +185,7 @@ export default function UsersTab({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
-            <span className="text-[11px] text-slate-500">
-              Şifre en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermelidir.
-            </span>
+          <div className="flex justify-end pt-1">
             <button type="submit" disabled={busy} className={`${primaryBtn} px-5 py-2 text-xs sm:text-sm`}>
               {busy ? 'Kaydediliyor...' : 'Hesabı Kaydet'}
             </button>

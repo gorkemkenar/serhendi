@@ -104,13 +104,8 @@ export default function UnitsTab({
     return (
       <div className="p-3.5 sm:p-4 bg-slate-50/90 border-t border-slate-200 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <div className="text-xs sm:text-sm font-extrabold text-slate-900">
-              {u.name} — Kalem Kalem Borç & Detay Listesi ({items.length} Kalem)
-            </div>
-            <p className="text-[11px] text-slate-500">
-              Her kalemin hangi cariye ve neye ait olduğu, Borç / Ödenen / Kalan tutarları ve bağlı hareketleri
-            </p>
+          <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+            {u.name} — Kalem Kalem Borç & Detay Listesi ({items.length} Kalem)
           </div>
           {isAdmin && (
             <div className="flex flex-wrap items-center gap-1">
@@ -230,9 +225,6 @@ export default function UnitsTab({
                               <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-[#0f6b36] text-[10px] font-bold">
                                 Hareketleri Gör ({itemTxs.length})
                               </span>
-                            </div>
-                            <div className="text-[11px] font-semibold text-[#0f6b36]">
-                              Aidiyet: {u.name}
                             </div>
                           </div>
                           {isAdmin && (
@@ -401,12 +393,7 @@ export default function UnitsTab({
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm">
       {/* Başlık & araçlar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 border-b border-slate-100">
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900">Cariler, Kalem Detayları & Güncel Bakiyeler</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Her carinin yanındaki <b>"Kalemler"</b> butonuna tıklayarak kalemlerin neye ait olduğunu, <b>Borç / Ödenen / Kalan</b> tutarlarını ve o kaleme ait hareketleri görebilirsiniz.
-          </p>
-        </div>
+        <h2 className="text-base font-extrabold text-slate-900">Cariler, Kalem Detayları & Güncel Bakiyeler</h2>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex p-1 rounded-lg bg-slate-100">
             <button
@@ -499,9 +486,6 @@ export default function UnitsTab({
                             title="Kalem detaylarını açmak / kapatmak için tıklayın"
                           >
                             <div className="font-bold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">{u.name}</div>
-                            <div className="text-[11px] text-slate-400 font-semibold">
-                              {itemCount} kalem ({(u.items || []).map((i) => i.name).join(', ') || 'Kalem yok'})
-                            </div>
                           </div>
                         )}
                       </td>

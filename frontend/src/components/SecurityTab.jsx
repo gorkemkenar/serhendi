@@ -65,12 +65,7 @@ export default function SecurityTab({ currentUser, onNotify, onSelfPasswordChang
           <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
             <IconShield className="w-5 h-5" />
           </div>
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-900">Güvenlik & Şifre Yönetimi</h2>
-            <p className="text-xs text-slate-500">
-              Hesap şifrenizi güvenli şekilde güncelleyebilir ve sistem denetim kayıtlarını inceleyebilirsiniz
-            </p>
-          </div>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900">Güvenlik & Şifre Yönetimi</h2>
         </div>
 
         {/* MOBİL UYUMLU SEKME SEÇİCİ (10 Koruma Adımı Yalnızca Owner'da Görünür) */}
@@ -115,12 +110,7 @@ export default function SecurityTab({ currentUser, onNotify, onSelfPasswordChang
               <div className="p-2 rounded-xl bg-emerald-50 text-[#0f6b36]">
                 <IconLock className="w-4 h-4" />
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Şifremi Değiştir (@{currentUser.username})</h3>
-                <p className="text-[11px] text-slate-500">
-                  En az 8 karakter; büyük harf, küçük harf ve rakam içeren güçlü bir şifre belirleyin.
-                </p>
-              </div>
+              <h3 className="text-sm font-bold text-slate-900">Şifremi Değiştir (@{currentUser.username})</h3>
             </div>
 
             <div>

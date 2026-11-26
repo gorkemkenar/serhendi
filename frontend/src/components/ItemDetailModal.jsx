@@ -60,7 +60,6 @@ export default function ItemDetailModal({
   return (
     <Modal
       title={`${item.name} — Yapılan Hareketler`}
-      subtitle={unit?.name || item.unitName || ''}
       icon={<IconFileText />}
       onClose={onClose}
       maxWidth="max-w-2xl"
@@ -207,10 +206,7 @@ export default function ItemDetailModal({
                                 className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
                               />
                             ) : (
-                              <>
-                                <div>{tx.description}</div>
-                                {tx.createdBy && <div className="text-[10px] text-slate-400">Kaydeden: {tx.createdBy}</div>}
-                              </>
+                              <div>{tx.description}</div>
                             )}
                           </td>
                           <td className="py-2.5 px-3 text-right font-bold tabular-nums text-rose-600 whitespace-nowrap">

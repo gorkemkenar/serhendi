@@ -4,7 +4,7 @@ import { primaryBtn } from '../constants.js';
 
 export default function InstallModal({ onClose }) {
   return (
-    <Modal title="Telefona İndir / Ana Ekrana Ekle" subtitle="SİLİVRİ SERHENDİ Mobil Kurulum" icon={<IconSmartphone />} onClose={onClose}>
+    <Modal title="Telefona İndir / Ana Ekrana Ekle" icon={<IconSmartphone />} onClose={onClose}>
       <div className="space-y-3">
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
           <div className="text-sm font-extrabold text-slate-900">Android (Chrome):</div>

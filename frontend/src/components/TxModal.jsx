@@ -51,10 +51,10 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
   };
 
   return (
-    <Modal title="Yeni Cari Hareket (Kalem Bağlantılı)" icon={<IconPlus />} onClose={onClose}>
+    <Modal title="Yeni Cari Hareket" icon={<IconPlus />} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-3.5">
         <div>
-          <label className={labelCls}>1. Hangi Cari / Birim?</label>
+          <label className={labelCls}>Cari / Birim</label>
           <select
             value={form.unitId}
             onChange={(e) => setForm({ ...form, unitId: e.target.value })}
@@ -71,7 +71,7 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
 
         {/* HANGİ KALEME EKLENECEĞİ SEÇİMİ */}
         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-          <label className={labelCls}>2. Hangi Kaleme Eklenecek? (Kalem Seçimi)</label>
+          <label className={labelCls}>Kalem</label>
           <select
             value={form.itemId}
             onChange={(e) => setForm({ ...form, itemId: e.target.value })}
@@ -168,14 +168,9 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
               </option>
             ))}
           </select>
-          <p className={`mt-1 text-[11px] font-semibold ${direction === 'DEBT' ? 'text-rose-600' : 'text-[#0f6b36]'}`}>
-            {direction === 'DEBT'
-              ? `Bu tutar seçili kalemin (${selectedItem?.name || form.customCategory || 'Cari'}) BORÇ hanesine eklenir.`
-              : `Bu tutar seçili kalemin (${selectedItem?.name || form.customCategory || 'Cari'}) ÖDENEN hanesine eklenir.`}
-          </p>
         </div>
         <div>
-          <label className={labelCls}>İşlem Detayı / Açıklama (Neye Ait?)</label>
+          <label className={labelCls}>İşlem Detayı / Açıklama</label>
           <input
             type="text"
             required
@@ -194,10 +189,6 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
             onChange={(e) => setForm({ ...form, documentUrl: e.target.value })}
             className={inputCls}
           />
-          <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-            <IconShield className="w-3.5 h-3.5 text-[#0f6b36] shrink-0" />
-            <span>Yalnızca güvenli HTTPS beyaz listesindeki alan adları kabul edilir.</span>
-          </p>
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
