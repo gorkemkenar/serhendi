@@ -155,6 +155,55 @@ def load_defaults(force_reset: bool = False):
             user.set_password(password)
             user.save()
 
+    # Mevcut kalemlerin boş kalmış açıklamalarını (description) ve her kalemin hareket geçmişini senkronize et
+    default_desc_map = {iid: idesc for iid, _, _, idesc, _, _ in DEFAULT_UNIT_ITEMS}
+    for item in UnitItem.objects.select_related('unit').all():
+        if not item.description:
+            fallback_desc = default_desc_map.get(item.id) or f'{item.unit.name} — {item.name} Kalemi'
+            UnitItem.objects.filter(pk=item.pk).update(description=fallback_desc)
+            item.description = fallback_desc
+
+        # Eğer bu kaleme bağlı hiç hareket yoksa ve kalemin borç/ödenen tutarı varsa başlangıç hareketlerini oluştur
+        has_linked_tx = Transaction.objects.filter(item=item).exists()
+        if not has_linked_tx:
+            # Aynı birimde eşleşmeyen HRK-1001..1013 varsa ve bu kalem Kumanya ise bağla, yoksa kalemin kendi hareketini oluştur
+            if (item.debt or 0) > 0:
+                Transaction.objects.create(
+                    date='2026-11-01',
+                    unit=item.unit,
+                    item=item,
+                    category=item.name,
+                    type=Transaction.Type.MAL_SEVKIYATI,
+                    description=item.description or f'{item.unit.name} {item.name} Borç Kaydı',
+                    debt=item.debt,
+                    credit=Decimal('0'),
+                    created_by=ADMIN_NAME,
+                )
+            if (item.paid or 0) > 0:
+                Transaction.objects.create(
+                    date='2026-11-10',
+                    unit=item.unit,
+                    item=item,
+                    category=item.name,
+                    type=Transaction.Type.NAKIT_TAHSILAT,
+                    description=f'{item.unit.name} {item.name} Ödeme / Tahsilat Kaydı',
+                    debt=Decimal('0'),
+                    credit=item.paid,
+                    created_by=ADMIN_NAME,
+                )
+
+    # Eski kalemsiz (HRK-1001..HRK-1013) genel hareketler mükerrerlik yaratmasın diye kaleme bağla veya temizle
+    for tid, _, unit_id, item_id, cat_name, _, _, _, _ in DEFAULT_TRANSACTIONS:
+        tx_obj = Transaction.objects.filter(pk=tid, item__isnull=True).first()
+        if tx_obj:
+            # Eğer yukarıda her kaleme kendi hareketi oluşturulduysa bu eski kalemsiz örnek hareketi kaldır
+            if Transaction.objects.filter(unit_id=unit_id, item__isnull=False).exclude(pk=tid).exists():
+                tx_obj.delete()
+            else:
+                target_item = UnitItem.objects.filter(pk=item_id).first()
+                if target_item:
+                    Transaction.objects.filter(pk=tid).update(item=target_item, category=cat_name)
+
     if force_reset or not has_any_units:
         SecurityAuditLog.objects.create(
             action='DEFAULTS_LOADED',

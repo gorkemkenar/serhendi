@@ -1,8 +1,20 @@
+import { useState } from 'react';
 import Modal from './Modal.jsx';
-import { IconFileText, IconPlus, IconTrash } from '../icons.jsx';
+import { IconEdit, IconFileText, IconPlus, IconTrash } from '../icons.jsx';
 import { TRANSACTION_TYPES, formatTRY, primaryBtn } from '../constants.js';
 
-export default function ItemDetailModal({ item, unit, transactions = [], isAdmin, onClose, onNewTx, onDeleteTx }) {
+export default function ItemDetailModal({
+  item,
+  unit,
+  transactions = [],
+  isAdmin,
+  onClose,
+  onNewTx,
+  onUpdateTx,
+  onDeleteTx
+}) {
+  const [editTx, setEditTx] = useState(null); // { id, date, type, description, amount }
+
   if (!item) return null;
 
   const debt = Number(item.debt) || 0;
@@ -17,6 +29,33 @@ export default function ItemDetailModal({ item, unit, transactions = [], isAdmin
         (t.itemId === item.id || (t.category && t.category.toLowerCase() === item.name.toLowerCase()))
     )
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id)));
+
+  const startEditTx = (tx) => {
+    if (!isAdmin) return;
+    const currentAmt = Math.max(Number(tx.debt) || 0, Number(tx.credit) || 0);
+    setEditTx({
+      id: tx.id,
+      date: tx.date,
+      type: tx.type,
+      description: tx.description,
+      amount: currentAmt
+    });
+  };
+
+  const saveEditTx = async (e) => {
+    e?.preventDefault?.();
+    if (!editTx || !onUpdateTx) return;
+    const amt = Math.max(0, parseFloat(editTx.amount) || 0);
+    const dir = TRANSACTION_TYPES.find((t) => t.label === editTx.type)?.direction || 'DEBT';
+    await onUpdateTx(editTx.id, {
+      date: editTx.date,
+      type: editTx.type,
+      description: editTx.description.trim(),
+      debt: dir === 'DEBT' ? amt : 0,
+      credit: dir === 'CREDIT' ? amt : 0
+    });
+    setEditTx(null);
+  };
 
   return (
     <Modal
@@ -111,7 +150,7 @@ export default function ItemDetailModal({ item, unit, transactions = [], isAdmin
                       <th className="py-2.5 px-3 font-bold border-b border-slate-200">Açıklama</th>
                       <th className="py-2.5 px-3 font-bold border-b border-slate-200 text-right">Borç (₺)</th>
                       <th className="py-2.5 px-3 font-bold border-b border-slate-200 text-right">Ödenen (₺)</th>
-                      {isAdmin && <th className="py-2.5 px-2.5 font-bold border-b border-slate-200 text-center">Sil</th>}
+                      {isAdmin && <th className="py-2.5 px-2.5 font-bold border-b border-slate-200 text-right">İşlem</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -119,41 +158,120 @@ export default function ItemDetailModal({ item, unit, transactions = [], isAdmin
                       const tObj = TRANSACTION_TYPES.find((t) => t.label === tx.type);
                       const txDebt = Number(tx.debt) || 0;
                       const txCredit = Number(tx.credit) || 0;
+                      const isEditing = isAdmin && editTx?.id === tx.id;
                       return (
-                        <tr key={tx.id} className="hover:bg-slate-50">
+                        <tr key={tx.id} className={isEditing ? 'bg-amber-50/50' : 'hover:bg-slate-50'}>
                           <td className="py-2.5 px-3 whitespace-nowrap">
-                            <div className="font-semibold text-slate-800">{tx.date}</div>
-                            <div className="font-mono text-[10px] text-slate-400">{tx.id}</div>
+                            {isEditing ? (
+                              <input
+                                type="date"
+                                value={editTx.date}
+                                onChange={(e) => setEditTx({ ...editTx, date: e.target.value })}
+                                className="px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                              />
+                            ) : (
+                              <>
+                                <div className="font-semibold text-slate-800">{tx.date}</div>
+                                <div className="font-mono text-[10px] text-slate-400">{tx.id}</div>
+                              </>
+                            )}
                           </td>
                           <td className="py-2.5 px-3 whitespace-nowrap">
-                            <span
-                              className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                                tObj?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
-                              }`}
-                            >
-                              {tx.type}
-                            </span>
+                            {isEditing ? (
+                              <select
+                                value={editTx.type}
+                                onChange={(e) => setEditTx({ ...editTx, type: e.target.value })}
+                                className="px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                              >
+                                {TRANSACTION_TYPES.map((t) => (
+                                  <option key={t.label} value={t.label}>
+                                    {t.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                  tObj?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                {tx.type}
+                              </span>
+                            )}
                           </td>
                           <td className="py-2.5 px-3 text-slate-700">
-                            <div>{tx.description}</div>
-                            {tx.createdBy && <div className="text-[10px] text-slate-400">Kaydeden: {tx.createdBy}</div>}
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editTx.description}
+                                onChange={(e) => setEditTx({ ...editTx, description: e.target.value })}
+                                className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                              />
+                            ) : (
+                              <>
+                                <div>{tx.description}</div>
+                                {tx.createdBy && <div className="text-[10px] text-slate-400">Kaydeden: {tx.createdBy}</div>}
+                              </>
+                            )}
                           </td>
                           <td className="py-2.5 px-3 text-right font-bold tabular-nums text-rose-600 whitespace-nowrap">
-                            {txDebt > 0 ? formatTRY(txDebt) : '-'}
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={editTx.amount}
+                                onChange={(e) => setEditTx({ ...editTx, amount: e.target.value })}
+                                className="w-24 px-2 py-1 text-xs text-right border border-slate-300 rounded bg-white"
+                              />
+                            ) : txDebt > 0 ? (
+                              formatTRY(txDebt)
+                            ) : (
+                              '-'
+                            )}
                           </td>
                           <td className="py-2.5 px-3 text-right font-bold tabular-nums text-[#0f6b36] whitespace-nowrap">
-                            {txCredit > 0 ? formatTRY(txCredit) : '-'}
+                            {isEditing ? '-' : txCredit > 0 ? formatTRY(txCredit) : '-'}
                           </td>
                           {isAdmin && (
-                            <td className="py-2.5 px-2.5 text-center">
-                              <button
-                                type="button"
-                                onClick={() => onDeleteTx?.(tx)}
-                                className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                                title="Hareketi Sil"
-                              >
-                                <IconTrash className="w-3.5 h-3.5" />
-                              </button>
+                            <td className="py-2.5 px-2.5 text-right whitespace-nowrap">
+                              {isEditing ? (
+                                <div className="inline-flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={saveEditTx}
+                                    className="px-2 py-1 rounded bg-[#0f6b36] text-white text-[11px] font-bold cursor-pointer"
+                                  >
+                                    Kaydet
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditTx(null)}
+                                    className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold cursor-pointer"
+                                  >
+                                    İptal
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="inline-flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditTx(tx)}
+                                    className="p-1 text-slate-400 hover:text-slate-800 cursor-pointer"
+                                    title="Hareketi Düzenle"
+                                  >
+                                    <IconEdit className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => onDeleteTx?.(tx)}
+                                    className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                                    title="Hareketi Sil"
+                                  >
+                                    <IconTrash className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           )}
                         </tr>

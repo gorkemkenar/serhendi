@@ -333,6 +333,32 @@ class UnitItemViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         item = serializer.save()
+        actor_name = self.request.user.display_name
+        today = timezone.localdate()
+        if (item.debt or 0) > 0:
+            Transaction.objects.create(
+                date=today,
+                unit=item.unit,
+                item=item,
+                category=item.name,
+                type=Transaction.Type.BORC_KAYDI,
+                description=item.description or f'{item.name} Başlangıç Borç Kaydı',
+                debt=item.debt,
+                credit=0,
+                created_by=actor_name,
+            )
+        if (item.paid or 0) > 0:
+            Transaction.objects.create(
+                date=today,
+                unit=item.unit,
+                item=item,
+                category=item.name,
+                type=Transaction.Type.NAKIT_TAHSILAT,
+                description=f'{item.name} Başlangıç Ödeme / Tahsilat Kaydı',
+                debt=0,
+                credit=item.paid,
+                created_by=actor_name,
+            )
         log_security_event(
             action='UNIT_ITEM_CREATED',
             severity='INFO',
@@ -342,7 +368,70 @@ class UnitItemViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
+        old_item = self.get_object()
+        old_debt = old_item.debt or 0
+        old_paid = old_item.paid or 0
+        old_name = old_item.name
+
         item = serializer.save()
+        if item.name != old_name:
+            Transaction.objects.filter(item=item).update(category=item.name)
+
+        actor_name = self.request.user.display_name
+        today = timezone.localdate()
+        diff_debt = (item.debt or 0) - old_debt
+        diff_paid = (item.paid or 0) - old_paid
+
+        if diff_debt > 0:
+            Transaction.objects.create(
+                date=today,
+                unit=item.unit,
+                item=item,
+                category=item.name,
+                type=Transaction.Type.BORC_KAYDI,
+                description=f'{item.name} Borç Artışı / Güncelleme',
+                debt=diff_debt,
+                credit=0,
+                created_by=actor_name,
+            )
+        elif diff_debt < 0:
+            Transaction.objects.create(
+                date=today,
+                unit=item.unit,
+                item=item,
+                category=item.name,
+                type=Transaction.Type.IADE_MAHSUP,
+                description=f'{item.name} Borç Düşümü / Düzeltme',
+                debt=0,
+                credit=abs(diff_debt),
+                created_by=actor_name,
+            )
+
+        if diff_paid > 0:
+            Transaction.objects.create(
+                date=today,
+                unit=item.unit,
+                item=item,
+                category=item.name,
+                type=Transaction.Type.NAKIT_TAHSILAT,
+                description=f'{item.name} Ödeme / Tahsilat Girişi',
+                debt=0,
+                credit=diff_paid,
+                created_by=actor_name,
+            )
+        elif diff_paid < 0:
+            Transaction.objects.create(
+                date=today,
+                unit=item.unit,
+                item=item,
+                category=item.name,
+                type=Transaction.Type.BORC_KAYDI,
+                description=f'{item.name} Ödenen Tutar Düzeltmesi',
+                debt=abs(diff_paid),
+                credit=0,
+                created_by=actor_name,
+            )
+
         log_security_event(
             action='UNIT_ITEM_UPDATED',
             severity='INFO',
@@ -353,13 +442,17 @@ class UnitItemViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         uid, iname = instance.unit_id, instance.name
+        # Kaleme bağlı tüm cari hareketleri de birlikte temizle ki cari bakiyesinde hayalet borç kalmasın
+        Transaction.objects.filter(
+            Q(item=instance) | Q(unit_id=uid, category__iexact=iname)
+        ).delete()
         instance.delete()
         log_security_event(
             action='UNIT_ITEM_DELETED',
             severity='WARNING',
             request=self.request,
             user=self.request.user,
-            description=f'Cari kalemi silindi: {uid} - {iname}.',
+            description=f'Cari kalemi ve bağlı hareketleri silindi: {uid} - {iname}.',
         )
 
 

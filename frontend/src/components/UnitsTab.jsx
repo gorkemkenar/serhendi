@@ -298,9 +298,8 @@ export default function UnitsTab({
                         <div className="p-2 rounded-lg bg-slate-100 border border-slate-200 hover:border-slate-300">
                           <div className="text-[10px] font-bold uppercase text-slate-600">Kalan</div>
                           <div
-                            className={`text-xs font-black tabular-nums mt-0.5 ${
-                              rem > 0 ? 'text-rose-700' : 'text-[#0f6b36]'
-                            }`}
+                            className={`text-xs font-black tabular-nums mt-0.5 ${rem > 0 ? 'text-rose-700' : 'text-[#0f6b36]'
+                              }`}
                           >
                             {formatTRY(rem)}
                           </div>
@@ -319,9 +318,8 @@ export default function UnitsTab({
                                 <b className="text-slate-700">{tx.date}:</b> {tx.description}
                               </span>
                               <span
-                                className={`font-bold tabular-nums shrink-0 ${
-                                  Number(tx.debt) > 0 ? 'text-rose-600' : 'text-[#0f6b36]'
-                                }`}
+                                className={`font-bold tabular-nums shrink-0 ${Number(tx.debt) > 0 ? 'text-rose-600' : 'text-[#0f6b36]'
+                                  }`}
                               >
                                 {Number(tx.debt) > 0 ? `+${formatTRY(tx.debt)}` : `-${formatTRY(tx.credit)}`}
                               </span>
@@ -415,18 +413,16 @@ export default function UnitsTab({
           <div className="inline-flex p-1 rounded-lg bg-slate-100">
             <button
               onClick={() => onViewMode('table')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
-                viewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${viewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                }`}
             >
               <IconTable className="w-3.5 h-3.5" />
               Tablo
             </button>
             <button
               onClick={() => onViewMode('grid')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${
-                viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-              }`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                }`}
             >
               <IconGrid className="w-3.5 h-3.5" />
               Kartlar
@@ -573,11 +569,10 @@ export default function UnitsTab({
                             <button
                               type="button"
                               onClick={() => toggleExpand(u.id)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer whitespace-nowrap ${
-                                open
-                                  ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
-                                  : 'bg-emerald-50 text-[#0f6b36] border-emerald-200 hover:bg-emerald-100'
-                              }`}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer whitespace-nowrap ${open
+                                ? 'bg-[#0f6b36] text-white border-[#0f6b36]'
+                                : 'bg-emerald-50 text-[#0f6b36] border-emerald-200 hover:bg-emerald-100'
+                                }`}
                             >
                               Kalemler ({itemCount})
                             </button>

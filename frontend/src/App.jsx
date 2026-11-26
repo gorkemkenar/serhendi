@@ -333,7 +333,7 @@ export default function App() {
       return false;
     }
     const ok = await handleSaveUnit(quick.id, quick);
-    if (ok) notify('Cari adı ve telefon numarası güncellendi.');
+    if (ok) notify('Cari / Birim bilgileri güncellendi.');
     return ok;
   };
 
@@ -359,7 +359,9 @@ export default function App() {
     try {
       const created = await api.unitItems.create(data);
       setUnitItems((prev) => [...prev, created]);
-      notify(`"${created.name}" kalemi eklendi.`);
+      const freshTxs = await api.transactions.list().catch(() => null);
+      if (freshTxs) setTransactions(freshTxs);
+      notify(`"${created.name}" kalemi ve başlangıç hareketi eklendi.`);
       return true;
     } catch (err) {
       handleError(err);
@@ -371,7 +373,9 @@ export default function App() {
     try {
       const updated = await api.unitItems.update(id, patch);
       setUnitItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
-      notify(`"${updated.name}" kalemi güncellendi.`);
+      const freshTxs = await api.transactions.list().catch(() => null);
+      if (freshTxs) setTransactions(freshTxs);
+      notify(`"${updated.name}" kalemi ve hareket geçmişi güncellendi.`);
       return true;
     } catch (err) {
       handleError(err);
@@ -380,11 +384,21 @@ export default function App() {
   };
 
   const handleDeleteUnitItem = async (item) => {
-    if (!window.confirm(`"${item.name}" kalemi silinecek. Emin misiniz?`)) return;
+    const linkedCount = transactions.filter(
+      (t) =>
+        t.unitId === item.unitId &&
+        (t.itemId === item.id || (t.category && t.category.toLowerCase() === item.name.toLowerCase()))
+    ).length;
+    const msg = linkedCount
+      ? `"${item.name}" kalemi ve ona bağlı ${linkedCount} cari hareket kalıcı olarak silinecek. Emin misiniz?`
+      : `"${item.name}" kalemi silinecek. Emin misiniz?`;
+    if (!window.confirm(msg)) return;
     try {
       await api.unitItems.remove(item.id);
       setUnitItems((prev) => prev.filter((i) => i.id !== item.id));
-      notify('Kalem silindi.');
+      const freshTxs = await api.transactions.list().catch(() => null);
+      if (freshTxs) setTransactions(freshTxs);
+      notify('Kalem ve bağlı hareketleri silindi.');
     } catch (err) {
       handleError(err);
     }
@@ -538,10 +552,37 @@ export default function App() {
 
   // --- 8. VERİ BÜTÜNLÜĞÜ İMZALI (SHA-256 CHECKSUM) DIŞA AKTARMA ---
   const exportCSV = async () => {
-    const headers = ['İşlem No', 'Tarih', 'Birim', 'Tür', 'Açıklama', 'Borç (TL)', 'Alacak (TL)', 'Kaydı Giren', 'HMAC-SHA256 İmza'];
+    const headers = [
+      'İşlem No',
+      'Tarih',
+      'Birim',
+      'Ait Olduğu Kalem',
+      'Kalem Detayı',
+      'Tür',
+      'Açıklama',
+      'Borç (TL)',
+      'Ödenen (TL)',
+      'Kaydı Giren',
+      'HMAC-SHA256 İmza'
+    ];
     const lines = filteredTransactions.map((tx) => {
       const uName = units.find((u) => u.id === tx.unitId)?.name || tx.unitId;
-      return [tx.id, tx.date, uName, tx.type, tx.description, tx.debt, tx.credit, tx.createdBy, tx.integrityHash || '']
+      const linkedItem = unitItems.find((i) => i.id === tx.itemId);
+      const itemName = linkedItem?.name || tx.itemName || tx.category || 'Genel';
+      const itemDesc = linkedItem?.description || tx.itemDescription || '';
+      return [
+        tx.id,
+        tx.date,
+        uName,
+        itemName,
+        itemDesc,
+        tx.type,
+        tx.description,
+        tx.debt,
+        tx.credit,
+        tx.createdBy,
+        tx.integrityHash || ''
+      ]
         .map(safeCsvCell)
         .join(';');
     });
@@ -840,6 +881,7 @@ export default function App() {
           isAdmin={isAdmin}
           onClose={() => setSelectedItemModal(null)}
           onNewTx={(uId, itId) => setTxModalContext({ unitId: uId || '', itemId: itId || '' })}
+          onUpdateTx={handleUpdateTransaction}
           onDeleteTx={handleDeleteTransaction}
         />
       )}
