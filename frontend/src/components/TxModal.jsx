@@ -13,7 +13,7 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
     unitId: initialUnitId,
     itemId: defaultItemId || '',
     customCategory: '',
-    type: 'Mal Sevkiyatı',
+    type: 'Malzeme',
     description: '',
     amount: '',
     documentUrl: ''

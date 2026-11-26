@@ -128,6 +128,12 @@ class TransactionSerializer(serializers.ModelSerializer):
             'credit': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
         }
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data.get('type') == 'Mal Sevkiyatı':
+            data['type'] = 'Malzeme'
+        return data
+
     def get_itemName(self, obj):
         if obj.item_id and obj.item:
             return obj.item.name

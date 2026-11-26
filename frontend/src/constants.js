@@ -1,7 +1,7 @@
 import { IconEye, IconLock, IconShield } from './icons.jsx';
 
 export const TRANSACTION_TYPES = [
-  { label: 'Mal Sevkiyatı', direction: 'DEBT', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
+  { label: 'Malzeme', direction: 'DEBT', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
   { label: 'Borç Kaydı', direction: 'DEBT', badge: 'bg-orange-50 text-orange-800 border-orange-200' },
   { label: 'Nakit Tahsilat', direction: 'CREDIT', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   { label: 'Havale / EFT', direction: 'CREDIT', badge: 'bg-teal-50 text-teal-800 border-teal-200' },

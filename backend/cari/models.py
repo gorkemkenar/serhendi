@@ -190,7 +190,8 @@ class UnitItem(models.Model):
 
 class Transaction(models.Model):
     class Type(models.TextChoices):
-        MAL_SEVKIYATI = 'Mal Sevkiyatı', 'Mal Sevkiyatı'
+        MALZEME = 'Malzeme', 'Malzeme'
+        MAL_SEVKIYATI = 'Mal Sevkiyatı', 'Malzeme'
         BORC_KAYDI = 'Borç Kaydı', 'Borç Kaydı'
         NAKIT_TAHSILAT = 'Nakit Tahsilat', 'Nakit Tahsilat'
         HAVALE_EFT = 'Havale / EFT', 'Havale / EFT'
@@ -198,7 +199,7 @@ class Transaction(models.Model):
         ALACAK_KAYDI = 'Alacak Kaydı', 'Alacak Kaydı'
 
     # Borç yönlü işlem türleri; geri kalanlar alacak (ödeme) yönlüdür.
-    DEBT_TYPES = {Type.MAL_SEVKIYATI, Type.BORC_KAYDI}
+    DEBT_TYPES = {Type.MALZEME, Type.MAL_SEVKIYATI, Type.BORC_KAYDI}
 
     id = models.CharField('İşlem No', max_length=20, primary_key=True, editable=False)
     date = models.DateField('Tarih')

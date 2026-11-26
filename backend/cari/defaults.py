@@ -49,17 +49,17 @@ DEFAULT_UNIT_ITEMS = [
 
 # (id, tarih, birim, kalem_id, kalem_adı, tür, açıklama, borç, alacak)
 DEFAULT_TRANSACTIONS = [
-    ('HRK-1001', '2026-11-02', 'BRM-01', 'KLM-0101', 'Kumanya', 'Mal Sevkiyatı', 'Merkez Dergah Dönem Kumanya & Erzak Sevkiyatı', 145000, 0),
+    ('HRK-1001', '2026-11-02', 'BRM-01', 'KLM-0101', 'Kumanya', 'Malzeme', 'Merkez Dergah Dönem Kumanya & Erzak Sevkiyatı', 145000, 0),
     ('HRK-1002', '2026-11-05', 'BRM-01', 'KLM-0101', 'Kumanya', 'Havale / EFT', 'Merkez Dergah Kumanya Banka Havale Ödemesi', 0, 95000),
     ('HRK-1003', '2026-11-07', 'BRM-02', 'KLM-0104', 'Kumanya', 'Borç Kaydı', 'Yenimahalle Dergah Kumanya & Simit Borç Kaydı', 88000, 0),
     ('HRK-1004', '2026-11-09', 'BRM-02', 'KLM-0104', 'Kumanya', 'Nakit Tahsilat', 'Makbuz Karşılığı Kumanya Nakit Tahsilat', 0, 50000),
-    ('HRK-1005', '2026-11-11', 'BRM-03', 'KLM-0107', 'Kumanya', 'Mal Sevkiyatı', 'Kiptaş 2 Dergah Kumanya Sevkiyat Paketi', 72000, 0),
+    ('HRK-1005', '2026-11-11', 'BRM-03', 'KLM-0107', 'Kumanya', 'Malzeme', 'Kiptaş 2 Dergah Kumanya Sevkiyat Paketi', 72000, 0),
     ('HRK-1006', '2026-11-12', 'BRM-04', 'KLM-0110', 'Kumanya', 'Borç Kaydı', 'Mimar Sinan Dergah Kumanya Ürün Sevkiyatı', 94000, 0),
     ('HRK-1007', '2026-11-14', 'BRM-04', 'KLM-0110', 'Kumanya', 'Alacak Kaydı', 'Mimar Sinan Dergah Kumanya Hesap Alacak Mahsubu', 0, 94000),
-    ('HRK-1008', '2026-11-15', 'BRM-05', 'KLM-0113', 'Kumanya', 'Mal Sevkiyatı', 'Mavi yelken Dergah Kumanya Sevkiyat Kaydı', 61500, 0),
+    ('HRK-1008', '2026-11-15', 'BRM-05', 'KLM-0113', 'Kumanya', 'Malzeme', 'Mavi yelken Dergah Kumanya Sevkiyat Kaydı', 61500, 0),
     ('HRK-1009', '2026-11-17', 'BRM-06', 'KLM-0116', 'Kumanya', 'Borç Kaydı', 'Gümüşyaka Dergah Kumanya & Patates Borç Kaydı', 83000, 0),
     ('HRK-1010', '2026-11-18', 'BRM-06', 'KLM-0116', 'Kumanya', 'İade / Mahsup', 'Gümüşyaka Dergah Kumanya Ödeme / Mahsup Kaydı', 0, 43000),
-    ('HRK-1011', '2026-11-19', 'BRM-07', 'KLM-0119', 'Kumanya', 'Mal Sevkiyatı', 'Danamandıra Dergah Kumanya Sevkiyat Teslimatı', 54000, 0),
+    ('HRK-1011', '2026-11-19', 'BRM-07', 'KLM-0119', 'Kumanya', 'Malzeme', 'Danamandıra Dergah Kumanya Sevkiyat Teslimatı', 54000, 0),
     ('HRK-1012', '2026-11-20', 'BRM-08', 'KLM-0122', 'Kumanya', 'Borç Kaydı', 'Silivri il heyeti Genel Kumanya Sevkiyat Kaydı', 210000, 0),
     ('HRK-1013', '2026-11-21', 'BRM-08', 'KLM-0122', 'Kumanya', 'Havale / EFT', 'Silivri il heyeti Kumanya Kısmi Tahsilat Ödemesi', 0, 150000),
 ]
@@ -198,7 +198,7 @@ def load_defaults(force_reset: bool = False):
                     unit=item.unit,
                     item=item,
                     category=item.name,
-                    type=Transaction.Type.MAL_SEVKIYATI,
+                    type=Transaction.Type.MALZEME,
                     description=item.description or f'{item.unit.name} {item.name} Borç Kaydı',
                     debt=item.debt,
                     credit=Decimal('0'),
@@ -216,6 +216,11 @@ def load_defaults(force_reset: bool = False):
                     credit=item.paid,
                     created_by=ADMIN_NAME,
                 )
+
+    # Eski 'Mal Sevkiyatı' kayıtlarını 'Malzeme' olarak güncelle
+    for tx in Transaction.objects.filter(type='Mal Sevkiyatı'):
+        tx.type = 'Malzeme'
+        tx.save()
 
     # Eski kalemsiz (HRK-1001..HRK-1013) genel hareketler mükerrerlik yaratmasın diye kaleme bağla veya temizle
     for tid, _, unit_id, item_id, cat_name, _, _, _, _ in DEFAULT_TRANSACTIONS:
