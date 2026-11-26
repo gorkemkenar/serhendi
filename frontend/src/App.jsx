@@ -62,6 +62,30 @@ export default function App() {
   // --- YIL / DÖNEM SEÇİMİ (Her yıl kalemler ve bakiyeler sıfırdan başlar) ---
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [customYears, setCustomYears] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('serhendi_years') || '[]');
+      return Array.isArray(saved) ? saved.map(Number).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleAddYear = () => {
+    const maxYear = Math.max(currentYear, ...availableYears);
+    const nextYear = maxYear + 1;
+    setCustomYears((prev) => {
+      const next = Array.from(new Set([...prev, nextYear]));
+      try {
+        localStorage.setItem('serhendi_years', JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+    setSelectedYear(nextYear);
+    notify(`${nextYear} yılı dönemi eklendi ve seçildi.`);
+  };
 
   const [txModalContext, setTxModalContext] = useState(null); // null | { unitId?: string, itemId?: string }
   const [selectedItemModal, setSelectedItemModal] = useState(null); // null | { itemId: string, unitId: string }
@@ -171,14 +195,14 @@ export default function App() {
   // --- HESAPLAMALAR ---
   // Seçili yılın kalemleri ve hareketleri
   const availableYears = useMemo(() => {
-    const years = new Set([currentYear]);
+    const years = new Set([currentYear, currentYear + 1, ...customYears]);
     unitItems.forEach((i) => i.year && years.add(Number(i.year)));
     transactions.forEach((t) => {
       const y = Number(String(t.date || '').slice(0, 4));
       if (y) years.add(y);
     });
-    return Array.from(years).sort((a, b) => b - a);
-  }, [unitItems, transactions, currentYear]);
+    return Array.from(years).sort((a, b) => a - b);
+  }, [unitItems, transactions, currentYear, customYears]);
 
   const yearItems = useMemo(
     () => unitItems.filter((i) => Number(i.year || currentYear) === selectedYear),
@@ -717,19 +741,33 @@ export default function App() {
               <span className="hidden sm:inline">Çıkış Yap</span>
               <span className="sm:hidden">Çıkış</span>
             </button>
-            {/* YIL / DÖNEM SEÇİCİ (EN SAĞ ÜST) */}
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-[#0f6b36] hover:bg-[#095327] text-white border border-[#0f6b36] cursor-pointer focus:outline-none"
-              title="Dönem yılını seçin"
-            >
+            {/* YIL / DÖNEM SEÇİCİ & + YIL EKLEME (EN SAĞ ÜST) */}
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200">
               {availableYears.map((y) => (
-                <option key={y} value={y} className="bg-white text-slate-900">
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => setSelectedYear(y)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                    selectedYear === y
+                      ? 'bg-[#0f6b36] text-white shadow-xs'
+                      : 'text-slate-700 hover:bg-white'
+                  }`}
+                >
                   {y}
-                </option>
+                </button>
               ))}
-            </select>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleAddYear}
+                  className="px-2 py-1 rounded-lg text-xs font-black text-[#0f6b36] hover:bg-emerald-50 cursor-pointer"
+                  title="Yeni Yıl Ekle"
+                >
+                  + Yıl
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

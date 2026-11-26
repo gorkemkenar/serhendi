@@ -1,7 +1,7 @@
 // --- SİLİVRİ SERHENDİ ÖZEL YEŞİL & ALTIN LOGO ---
 export default function SilivriSerhendiLogo({ className = 'w-11 h-12', showText = true, dark = false }) {
   return (
-    <div className="flex items-center gap-2.5 min-w-0">
+    <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
       <svg
         viewBox="0 0 120 140"
         className={`${className} shrink-0`}
