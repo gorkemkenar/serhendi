@@ -162,7 +162,7 @@ export default function LedgerTab({
             <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 text-left">
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Tarih</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Cari / Birim</th>
-              <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Ait Olduğu Kalem & Detay</th>
+              <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Cari Detay</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Tür</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">İşlem Açıklaması</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70 text-right">Borç (₺)</th>

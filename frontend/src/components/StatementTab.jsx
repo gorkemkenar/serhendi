@@ -4,11 +4,11 @@ import { IconEdit, IconPlus, IconPrinter, IconTrash } from '../icons.jsx';
 import { formatTRY, primaryBtn } from '../constants.js';
 
 const PRESET_ITEMS = [
-  { name: 'Kumanya', description: 'Aylık Erzak & Kumanya Kolisi' },
-  { name: 'Kandil Simidi', description: 'Kandil Gecesi Simit Dağıtımı' },
-  { name: 'Patates', description: 'Mutfak Çuval Patates Sevkiyatı' },
-  { name: 'Kurban', description: 'Kurban & Et Organizasyonu' },
-  { name: 'Takvim / Dergi', description: 'Yıllık Takvim & Yayın Dağıtımı' }
+  { name: 'Kumanya' },
+  { name: 'Kandil Simidi' },
+  { name: 'Patates' },
+  { name: 'Kurban' },
+  { name: 'Takvim / Dergi' }
 ];
 
 export default function StatementTab({
@@ -136,8 +136,7 @@ export default function StatementTab({
                       onClick={() =>
                         setNewForm((prev) => ({
                           ...prev,
-                          name: p.name,
-                          description: `${report.unit.name} - ${p.description}`
+                          name: p.name
                         }))
                       }
                       className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-[#0f6b36] cursor-pointer"
@@ -154,7 +153,7 @@ export default function StatementTab({
                 <thead>
                   <tr className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600 text-left">
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200">Kalem Adı</th>
-                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Ait Olduğu Cari & Detay (Neye Ait?)</th>
+                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Cari Detay</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Borç (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Ödenen (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Kalan (₺)</th>
@@ -198,7 +197,7 @@ export default function StatementTab({
                           {isEditing ? (
                             <input
                               type="text"
-                              placeholder="Kalem detayı / neye ait?"
+                              placeholder="Cari detay..."
                               value={editItem.description || ''}
                               onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
                               className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
@@ -206,9 +205,7 @@ export default function StatementTab({
                           ) : (
                             <div>
                               <div className="text-[11px] font-semibold text-[#0f6b36]">{report.unit.name}</div>
-                              <div className="text-xs text-slate-600">
-                                {item.description || `${report.unit.name} — ${item.name} Kalemi`}
-                              </div>
+                              {item.description && <div className="text-xs text-slate-600">{item.description}</div>}
                             </div>
                           )}
                         </td>
@@ -320,10 +317,10 @@ export default function StatementTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Kalem Detayı / Neye Ait?</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Cari Detay</label>
                   <input
                     type="text"
-                    placeholder={`Örn: ${report.unit.name} erzak alımı`}
+                    placeholder="İsteğe bağlı detay..."
                     value={newForm.description}
                     onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
                     className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"

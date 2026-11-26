@@ -19,32 +19,32 @@ DEFAULT_UNITS = [
     ('BRM-08', 'Silivri il heyeti', 'Yusuf Arslan', '0532 108 08 08'),
 ]
 
-# Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, kalem detayı / neye ait, borç, ödenen)
+# Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, kalem detayı, borç, ödenen)
 DEFAULT_UNIT_ITEMS = [
-    ('KLM-0101', 'BRM-01', 'Kumanya', 'Dergah Aylık Erzak & Kumanya Kolisi', 80000, 55000),
-    ('KLM-0102', 'BRM-01', 'Kandil Simidi', 'Kandil Gecesi Simit Dağıtımı', 35000, 25000),
-    ('KLM-0103', 'BRM-01', 'Patates', 'Çuval Patates & Kışlık Sebze Sevkiyatı', 30000, 15000),
-    ('KLM-0104', 'BRM-02', 'Kumanya', 'Yenimahalle Erzak & Kumanya Paketi', 50000, 30000),
-    ('KLM-0105', 'BRM-02', 'Kandil Simidi', 'Kandil Simidi & İkramlık', 20000, 12000),
-    ('KLM-0106', 'BRM-02', 'Patates', 'Mutfak Patates & Soğan Tedariki', 18000, 8000),
-    ('KLM-0107', 'BRM-03', 'Kumanya', 'Kiptaş 2 Kumanya Dağıtım Paketi', 42000, 0),
-    ('KLM-0108', 'BRM-03', 'Kandil Simidi', 'Kandil Simidi التوزيع', 18000, 0),
-    ('KLM-0109', 'BRM-03', 'Patates', 'Çuval Patates Sevkiyatı', 12000, 0),
-    ('KLM-0110', 'BRM-04', 'Kumanya', 'Mimar Sinan Dönem Kumanyası', 54000, 54000),
-    ('KLM-0111', 'BRM-04', 'Kandil Simidi', 'Kandil Simidi Kolisi', 22000, 22000),
-    ('KLM-0112', 'BRM-04', 'Patates', 'Çuval Patates Alımı', 18000, 18000),
-    ('KLM-0113', 'BRM-05', 'Kumanya', 'Mavi Yelken Kumanya & Gıda', 35000, 0),
-    ('KLM-0114', 'BRM-05', 'Kandil Simidi', 'Kandil Simidi Paketi', 15000, 0),
-    ('KLM-0115', 'BRM-05', 'Patates', 'Kışlık Patates Çuvalı', 11500, 0),
-    ('KLM-0116', 'BRM-06', 'Kumanya', 'Gümüşyaka Dergah Aylık Kumanya & Erzak', 45000, 25000),
-    ('KLM-0117', 'BRM-06', 'Kandil Simidi', 'Gümüşyaka Kandil Simidi Dağıtımı', 20000, 10000),
-    ('KLM-0118', 'BRM-06', 'Patates', 'Gümüşyaka Mutfak Patates Çuvalı', 18000, 8000),
-    ('KLM-0119', 'BRM-07', 'Kumanya', 'Danamandıra Kumanya Sevkiyatı', 30000, 0),
-    ('KLM-0120', 'BRM-07', 'Kandil Simidi', 'Kandil Simidi Paketi', 14000, 0),
-    ('KLM-0121', 'BRM-07', 'Patates', 'Patates Tedariki', 10000, 0),
-    ('KLM-0122', 'BRM-08', 'Kumanya', 'Silivri İl Heyeti Genel Kumanya', 120000, 90000),
-    ('KLM-0123', 'BRM-08', 'Kandil Simidi', 'İl Heyeti Kandil Simidi Organizasyonu', 50000, 35000),
-    ('KLM-0124', 'BRM-08', 'Patates', 'İl Heyeti Toplu Patates Sevkiyatı', 40000, 25000),
+    ('KLM-0101', 'BRM-01', 'Kumanya', '', 80000, 55000),
+    ('KLM-0102', 'BRM-01', 'Kandil Simidi', '', 35000, 25000),
+    ('KLM-0103', 'BRM-01', 'Patates', '', 30000, 15000),
+    ('KLM-0104', 'BRM-02', 'Kumanya', '', 50000, 30000),
+    ('KLM-0105', 'BRM-02', 'Kandil Simidi', '', 20000, 12000),
+    ('KLM-0106', 'BRM-02', 'Patates', '', 18000, 8000),
+    ('KLM-0107', 'BRM-03', 'Kumanya', '', 42000, 0),
+    ('KLM-0108', 'BRM-03', 'Kandil Simidi', '', 18000, 0),
+    ('KLM-0109', 'BRM-03', 'Patates', '', 12000, 0),
+    ('KLM-0110', 'BRM-04', 'Kumanya', '', 54000, 54000),
+    ('KLM-0111', 'BRM-04', 'Kandil Simidi', '', 22000, 22000),
+    ('KLM-0112', 'BRM-04', 'Patates', '', 18000, 18000),
+    ('KLM-0113', 'BRM-05', 'Kumanya', '', 35000, 0),
+    ('KLM-0114', 'BRM-05', 'Kandil Simidi', '', 15000, 0),
+    ('KLM-0115', 'BRM-05', 'Patates', '', 11500, 0),
+    ('KLM-0116', 'BRM-06', 'Kumanya', '', 45000, 25000),
+    ('KLM-0117', 'BRM-06', 'Kandil Simidi', '', 20000, 10000),
+    ('KLM-0118', 'BRM-06', 'Patates', '', 18000, 8000),
+    ('KLM-0119', 'BRM-07', 'Kumanya', '', 30000, 0),
+    ('KLM-0120', 'BRM-07', 'Kandil Simidi', '', 14000, 0),
+    ('KLM-0121', 'BRM-07', 'Patates', '', 10000, 0),
+    ('KLM-0122', 'BRM-08', 'Kumanya', '', 120000, 90000),
+    ('KLM-0123', 'BRM-08', 'Kandil Simidi', '', 50000, 35000),
+    ('KLM-0124', 'BRM-08', 'Patates', '', 40000, 25000),
 ]
 
 # (id, tarih, birim, kalem_id, kalem_adı, tür, açıklama, borç, alacak)
@@ -155,13 +155,36 @@ def load_defaults(force_reset: bool = False):
             user.set_password(password)
             user.save()
 
-    # Mevcut kalemlerin boş kalmış açıklamalarını (description) ve her kalemin hareket geçmişini senkronize et
-    default_desc_map = {iid: idesc for iid, _, _, idesc, _, _ in DEFAULT_UNIT_ITEMS}
+    # Mevcut kalemlerde otomatik doldurulmuş hazır açıklamaları temizle ve hareket geçmişini senkronize et
+    auto_descriptions = {
+        'Dergah Aylık Erzak & Kumanya Kolisi',
+        'Kandil Gecesi Simit Dağıtımı',
+        'Çuval Patates & Kışlık Sebze Sevkiyatı',
+        'Yenimahalle Erzak & Kumanya Paketi',
+        'Kandil Simidi & İkramlık',
+        'Mutfak Patates & Soğan Tedariki',
+        'Kiptaş 2 Kumanya Dağıtım Paketi',
+        'Kandil Simidi التوزيع',
+        'Çuval Patates Sevkiyatı',
+        'Mimar Sinan Dönem Kumanyası',
+        'Kandil Simidi Kolisi',
+        'Çuval Patates Alımı',
+        'Mavi Yelken Kumanya & Gıda',
+        'Kandil Simidi Paketi',
+        'Kışlık Patates Çuvalı',
+        'Gümüşyaka Dergah Aylık Kumanya & Erzak',
+        'Gümüşyaka Kandil Simidi Dağıtımı',
+        'Gümüşyaka Mutfak Patates Çuvalı',
+        'Danamandıra Kumanya Sevkiyatı',
+        'Patates Tedariki',
+        'Silivri İl Heyeti Genel Kumanya',
+        'İl Heyeti Kandil Simidi Organizasyonu',
+        'İl Heyeti Toplu Patates Sevkiyatı',
+    }
     for item in UnitItem.objects.select_related('unit').all():
-        if not item.description:
-            fallback_desc = default_desc_map.get(item.id) or f'{item.unit.name} — {item.name} Kalemi'
-            UnitItem.objects.filter(pk=item.pk).update(description=fallback_desc)
-            item.description = fallback_desc
+        if item.description and (item.description in auto_descriptions or item.description.endswith(' Kalemi')):
+            UnitItem.objects.filter(pk=item.pk).update(description='')
+            item.description = ''
 
         # Eğer bu kaleme bağlı hiç hareket yoksa ve veritabanında bu birime ait hiç hareket yoksa başlangıç hareketi oluştur
         has_linked_tx = Transaction.objects.filter(

@@ -4,11 +4,11 @@ import { IconBuilding } from '../icons.jsx';
 import { inputCls, labelCls, primaryBtn } from '../constants.js';
 
 const DEFAULT_INITIAL_ITEMS = [
-  { name: 'Kumanya', description: 'Aylık Erzak & Kumanya Kolisi', selected: true },
-  { name: 'Kandil Simidi', description: 'Kandil Gecesi Simit Dağıtımı', selected: true },
-  { name: 'Patates', description: 'Mutfak Çuval Patates Sevkiyatı', selected: true },
-  { name: 'Kurban', description: 'Kurban & Et Organizasyonu', selected: false },
-  { name: 'Takvim / Dergi', description: 'Yıllık Takvim & Yayın Dağıtımı', selected: false }
+  { name: 'Kumanya', selected: true },
+  { name: 'Kandil Simidi', selected: true },
+  { name: 'Patates', selected: true },
+  { name: 'Kurban', selected: false },
+  { name: 'Takvim / Dergi', selected: false }
 ];
 
 export default function UnitModal({ unit, onClose, onSubmit }) {
@@ -83,7 +83,6 @@ export default function UnitModal({ unit, onClose, onSubmit }) {
                     />
                     <span className="font-bold text-slate-800">{it.name}</span>
                   </div>
-                  <span className="text-[11px] text-slate-500">{it.description}</span>
                 </label>
               ))}
             </div>

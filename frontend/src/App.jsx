@@ -305,7 +305,7 @@ export default function App() {
               const ci = await api.unitItems.create({
                 unitId: created.id,
                 name: it.name,
-                description: `${created.name} — ${it.description}`,
+                description: '',
                 debt: '0.00',
                 paid: '0.00'
               });

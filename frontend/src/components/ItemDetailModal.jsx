@@ -72,9 +72,11 @@ export default function ItemDetailModal({
             <div className="font-bold text-slate-800">
               Cari / Birim: <span className="text-[#0f6b36]">{unit?.name || item.unitName || item.unitId}</span>
             </div>
-            <div className="text-slate-500">
-              <b>Kalem Detayı / Neye Ait:</b> {item.description || `${unit?.name || ''} — ${item.name} Kalemi`}
-            </div>
+            {item.description && (
+              <div className="text-slate-500">
+                <b>Cari Detay:</b> {item.description}
+              </div>
+            )}
           </div>
           {isAdmin && (
             <button

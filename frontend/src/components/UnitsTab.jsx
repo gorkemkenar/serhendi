@@ -6,11 +6,11 @@ const balanceBadge = (n) =>
   n > 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-[#0f6b36] border-emerald-200';
 
 const PRESET_ITEMS = [
-  { name: 'Kumanya', description: 'Aylık Erzak & Kumanya Kolisi' },
-  { name: 'Kandil Simidi', description: 'Kandil Gecesi Simit Dağıtımı' },
-  { name: 'Patates', description: 'Mutfak Çuval Patates Sevkiyatı' },
-  { name: 'Kurban', description: 'Kurban & Et Organizasyonu' },
-  { name: 'Takvim / Dergi', description: 'Yıllık Takvim & Yayın Dağıtımı' }
+  { name: 'Kumanya' },
+  { name: 'Kandil Simidi' },
+  { name: 'Patates' },
+  { name: 'Kurban' },
+  { name: 'Takvim / Dergi' }
 ];
 
 export default function UnitsTab({
@@ -119,7 +119,7 @@ export default function UnitsTab({
                 <button
                   key={preset.name}
                   type="button"
-                  onClick={() => setNewForm(u.id, { name: preset.name, description: `${u.name} - ${preset.description}` })}
+                  onClick={() => setNewForm(u.id, { name: preset.name })}
                   className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white border border-slate-200 text-slate-700 hover:border-[#0f6b36] hover:text-[#0f6b36] cursor-pointer"
                 >
                   + {preset.name}
@@ -164,10 +164,10 @@ export default function UnitsTab({
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase">Kalem Detayı / Neye Ait?</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase">Cari Detay</label>
                         <input
                           type="text"
-                          placeholder="Örn: Gümüşyaka Dergah Aylık Kumanya Kolisi"
+                          placeholder="Cari detay..."
                           value={editItem.description || ''}
                           onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
                           className="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-white"
@@ -272,10 +272,11 @@ export default function UnitsTab({
                             </div>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500">
-                          <b className="text-slate-600">Detay / Neye Ait:</b>{' '}
-                          {item.description || `${u.name} — ${item.name} Kalemi`}
-                        </div>
+                        {item.description && (
+                          <div className="text-[11px] text-slate-500">
+                            <b className="text-slate-600">Cari Detay:</b> {item.description}
+                          </div>
+                        )}
                       </div>
 
                       {/* BORÇ | ÖDENEN | KALAN (TIKLANINCA KALEM HAREKETLERİ POP-UP AÇILIR) */}
@@ -350,10 +351,10 @@ export default function UnitsTab({
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 mb-1">Kalem Detayı / Neye Ait?</label>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Cari Detay</label>
               <input
                 type="text"
-                placeholder={`Örn: ${u.name} erzak alımı`}
+                placeholder="İsteğe bağlı detay..."
                 value={form.description}
                 onChange={(e) => setNewForm(u.id, { description: e.target.value })}
                 className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"

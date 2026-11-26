@@ -96,7 +96,7 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
               </div>
               {selectedItem.description && (
                 <div>
-                  <b>Kalem Detayı / Neye Ait:</b> {selectedItem.description}
+                  <b>Cari Detay:</b> {selectedItem.description}
                 </div>
               )}
               <div className="flex flex-wrap gap-3 pt-0.5 tabular-nums">
