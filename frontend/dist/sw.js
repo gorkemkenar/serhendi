@@ -1,5 +1,5 @@
-// SİLİVRİ SERHENDİ - PWA Servis Çalışanı (Service Worker v3)
-const CACHE_NAME = 'serhendi-cari-v3';
+// SİLİVRİ SERHENDİ - PWA Servis Çalışanı (Service Worker v4)
+const CACHE_NAME = 'serhendi-cari-v4';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

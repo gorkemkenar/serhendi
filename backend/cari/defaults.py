@@ -21,48 +21,34 @@ DEFAULT_UNITS = [
 
 # Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, kalem detayı, borç, ödenen)
 DEFAULT_UNIT_ITEMS = [
-    ('KLM-0101', 'BRM-01', 'Kumanya', '', 80000, 55000),
-    ('KLM-0102', 'BRM-01', 'Kandil Simidi', '', 35000, 25000),
-    ('KLM-0103', 'BRM-01', 'Patates', '', 30000, 15000),
-    ('KLM-0104', 'BRM-02', 'Kumanya', '', 50000, 30000),
-    ('KLM-0105', 'BRM-02', 'Kandil Simidi', '', 20000, 12000),
-    ('KLM-0106', 'BRM-02', 'Patates', '', 18000, 8000),
-    ('KLM-0107', 'BRM-03', 'Kumanya', '', 42000, 0),
-    ('KLM-0108', 'BRM-03', 'Kandil Simidi', '', 18000, 0),
-    ('KLM-0109', 'BRM-03', 'Patates', '', 12000, 0),
-    ('KLM-0110', 'BRM-04', 'Kumanya', '', 54000, 54000),
-    ('KLM-0111', 'BRM-04', 'Kandil Simidi', '', 22000, 22000),
-    ('KLM-0112', 'BRM-04', 'Patates', '', 18000, 18000),
-    ('KLM-0113', 'BRM-05', 'Kumanya', '', 35000, 0),
-    ('KLM-0114', 'BRM-05', 'Kandil Simidi', '', 15000, 0),
-    ('KLM-0115', 'BRM-05', 'Patates', '', 11500, 0),
-    ('KLM-0116', 'BRM-06', 'Kumanya', '', 45000, 25000),
-    ('KLM-0117', 'BRM-06', 'Kandil Simidi', '', 20000, 10000),
-    ('KLM-0118', 'BRM-06', 'Patates', '', 18000, 8000),
-    ('KLM-0119', 'BRM-07', 'Kumanya', '', 30000, 0),
-    ('KLM-0120', 'BRM-07', 'Kandil Simidi', '', 14000, 0),
-    ('KLM-0121', 'BRM-07', 'Patates', '', 10000, 0),
-    ('KLM-0122', 'BRM-08', 'Kumanya', '', 120000, 90000),
-    ('KLM-0123', 'BRM-08', 'Kandil Simidi', '', 50000, 35000),
-    ('KLM-0124', 'BRM-08', 'Patates', '', 40000, 25000),
+    ('KLM-0101', 'BRM-01', 'Kumanya', '', 0, 0),
+    ('KLM-0102', 'BRM-01', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0103', 'BRM-01', 'Patates', '', 0, 0),
+    ('KLM-0104', 'BRM-02', 'Kumanya', '', 0, 0),
+    ('KLM-0105', 'BRM-02', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0106', 'BRM-02', 'Patates', '', 0, 0),
+    ('KLM-0107', 'BRM-03', 'Kumanya', '', 0, 0),
+    ('KLM-0108', 'BRM-03', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0109', 'BRM-03', 'Patates', '', 0, 0),
+    ('KLM-0110', 'BRM-04', 'Kumanya', '', 0, 0),
+    ('KLM-0111', 'BRM-04', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0112', 'BRM-04', 'Patates', '', 0, 0),
+    ('KLM-0113', 'BRM-05', 'Kumanya', '', 0, 0),
+    ('KLM-0114', 'BRM-05', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0115', 'BRM-05', 'Patates', '', 0, 0),
+    ('KLM-0116', 'BRM-06', 'Kumanya', '', 0, 0),
+    ('KLM-0117', 'BRM-06', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0118', 'BRM-06', 'Patates', '', 0, 0),
+    ('KLM-0119', 'BRM-07', 'Kumanya', '', 0, 0),
+    ('KLM-0120', 'BRM-07', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0121', 'BRM-07', 'Patates', '', 0, 0),
+    ('KLM-0122', 'BRM-08', 'Kumanya', '', 0, 0),
+    ('KLM-0123', 'BRM-08', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0124', 'BRM-08', 'Patates', '', 0, 0),
 ]
 
 # (id, tarih, birim, kalem_id, kalem_adı, tür, açıklama, borç, alacak)
-DEFAULT_TRANSACTIONS = [
-    ('HRK-1001', '2026-11-02', 'BRM-01', 'KLM-0101', 'Kumanya', 'Malzeme', 'Merkez Dergah Dönem Kumanya & Erzak Sevkiyatı', 145000, 0),
-    ('HRK-1002', '2026-11-05', 'BRM-01', 'KLM-0101', 'Kumanya', 'Havale / EFT', 'Merkez Dergah Kumanya Banka Havale Ödemesi', 0, 95000),
-    ('HRK-1003', '2026-11-07', 'BRM-02', 'KLM-0104', 'Kumanya', 'Borç Kaydı', 'Yenimahalle Dergah Kumanya & Simit Borç Kaydı', 88000, 0),
-    ('HRK-1004', '2026-11-09', 'BRM-02', 'KLM-0104', 'Kumanya', 'Nakit Tahsilat', 'Makbuz Karşılığı Kumanya Nakit Tahsilat', 0, 50000),
-    ('HRK-1005', '2026-11-11', 'BRM-03', 'KLM-0107', 'Kumanya', 'Malzeme', 'Kiptaş 2 Dergah Kumanya Sevkiyat Paketi', 72000, 0),
-    ('HRK-1006', '2026-11-12', 'BRM-04', 'KLM-0110', 'Kumanya', 'Borç Kaydı', 'Mimar Sinan Dergah Kumanya Ürün Sevkiyatı', 94000, 0),
-    ('HRK-1007', '2026-11-14', 'BRM-04', 'KLM-0110', 'Kumanya', 'Alacak Kaydı', 'Mimar Sinan Dergah Kumanya Hesap Alacak Mahsubu', 0, 94000),
-    ('HRK-1008', '2026-11-15', 'BRM-05', 'KLM-0113', 'Kumanya', 'Malzeme', 'Mavi yelken Dergah Kumanya Sevkiyat Kaydı', 61500, 0),
-    ('HRK-1009', '2026-11-17', 'BRM-06', 'KLM-0116', 'Kumanya', 'Borç Kaydı', 'Gümüşyaka Dergah Kumanya & Patates Borç Kaydı', 83000, 0),
-    ('HRK-1010', '2026-11-18', 'BRM-06', 'KLM-0116', 'Kumanya', 'İade / Mahsup', 'Gümüşyaka Dergah Kumanya Ödeme / Mahsup Kaydı', 0, 43000),
-    ('HRK-1011', '2026-11-19', 'BRM-07', 'KLM-0119', 'Kumanya', 'Malzeme', 'Danamandıra Dergah Kumanya Sevkiyat Teslimatı', 54000, 0),
-    ('HRK-1012', '2026-11-20', 'BRM-08', 'KLM-0122', 'Kumanya', 'Borç Kaydı', 'Silivri il heyeti Genel Kumanya Sevkiyat Kaydı', 210000, 0),
-    ('HRK-1013', '2026-11-21', 'BRM-08', 'KLM-0122', 'Kumanya', 'Havale / EFT', 'Silivri il heyeti Kumanya Kısmi Tahsilat Ödemesi', 0, 150000),
-]
+DEFAULT_TRANSACTIONS = []
 
 # Rol Hiyerarşisi (Seviye 5 Owner -> Seviye 1) ve Güçlü Şifreli Hesaplar:
 # (ad, kullanıcı adı, güçlü şifre, rol, birim)
@@ -222,17 +208,17 @@ def load_defaults(force_reset: bool = False):
         tx.type = 'Malzeme'
         tx.save()
 
-    # Eski kalemsiz (HRK-1001..HRK-1013) genel hareketler mükerrerlik yaratmasın diye kaleme bağla veya temizle
-    for tid, _, unit_id, item_id, cat_name, _, _, _, _ in DEFAULT_TRANSACTIONS:
-        tx_obj = Transaction.objects.filter(pk=tid, item__isnull=True).first()
-        if tx_obj:
-            # Eğer yukarıda her kaleme kendi hareketi oluşturulduysa bu eski kalemsiz örnek hareketi kaldır
-            if Transaction.objects.filter(unit_id=unit_id, item__isnull=False).exclude(pk=tid).exists():
-                tx_obj.delete()
-            else:
-                target_item = UnitItem.objects.filter(pk=item_id).first()
-                if target_item:
-                    Transaction.objects.filter(pk=tid).update(item=target_item, category=cat_name)
+    # Eski örnek başlangıç hareketlerini (HRK-1001..1013 ve otomatik başlangıç kayıtları) bir defaya mahsus sıfırla
+    if not SecurityAuditLog.objects.filter(action='BALANCES_ZEROED_V1').exists():
+        Transaction.objects.all().delete()
+        UnitItem.objects.all().update(debt=Decimal('0.00'), paid=Decimal('0.00'), description='')
+        SecurityAuditLog.objects.create(
+            action='BALANCES_ZEROED_V1',
+            severity=SecurityAuditLog.Severity.INFO,
+            username='system',
+            ip_address='127.0.0.1',
+            description='Tüm cari kalem bakiyeleri ve örnek hareketler sıfırlandı (0,00 TL).',
+        )
 
     if force_reset or not has_any_units:
         SecurityAuditLog.objects.create(

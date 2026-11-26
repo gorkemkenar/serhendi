@@ -773,55 +773,6 @@ export default function App() {
               <span className="hidden sm:inline">Çıkış Yap</span>
               <span className="sm:hidden">Çıkış</span>
             </button>
-            {/* YIL / DÖNEM SEÇİCİ & + YIL EKLEME / SİLME (YALNIZCA OWNER VE BAŞ YÖNETİCİ / ADMIN EKLEYİP SİLEBİLİR) */}
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200">
-              {availableYears.map((y) => {
-                const isSelected = selectedYear === y;
-                return (
-                  <div
-                    key={y}
-                    className={`inline-flex items-center rounded-lg text-xs font-black transition ${
-                      isSelected ? 'bg-[#0f6b36] text-white shadow-xs' : 'text-slate-700 hover:bg-white'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setSelectedYear(y)}
-                      className="px-2.5 py-1 cursor-pointer"
-                    >
-                      {y}
-                    </button>
-                    {canManageYears && availableYears.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteYear(y);
-                        }}
-                        className={`pr-1.5 pl-0.5 py-1 text-[11px] leading-none cursor-pointer transition ${
-                          isSelected
-                            ? 'text-emerald-200 hover:text-white'
-                            : 'text-slate-400 hover:text-rose-600'
-                        }`}
-                        title={`${y} yılını sil`}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              {canManageYears && (
-                <button
-                  type="button"
-                  onClick={handleAddYear}
-                  className="px-2 py-1 rounded-lg text-xs font-black text-[#0f6b36] hover:bg-emerald-50 cursor-pointer whitespace-nowrap"
-                  title="Yeni Yıl Ekle"
-                >
-                  + Yıl
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
