@@ -255,7 +255,7 @@ class OwaspTop10SecurityTests(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {res_owner.data['token']}")
         adm_pwd_by_owner = self.client.post(
             f'/api/users/{admin_user.id}/set-password/',
-            {'password': 'Serhendi!Admin26'},
+            {'password': 'Serhendi!ByOwner99'},
             format='json',
         )
         self.assertEqual(adm_pwd_by_owner.status_code, 200)
