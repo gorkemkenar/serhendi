@@ -106,7 +106,7 @@ export default function UnitsTab({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="text-xs sm:text-sm font-extrabold text-slate-900">
-              {u.name} ({u.id}) — Kalem Kalem Borç & Detay Listesi ({items.length} Kalem)
+              {u.name} — Kalem Kalem Borç & Detay Listesi ({items.length} Kalem)
             </div>
             <p className="text-[11px] text-slate-500">
               Her kalemin hangi cariye ve neye ait olduğu, Borç / Ödenen / Kalan tutarları ve bağlı hareketleri
@@ -227,15 +227,12 @@ export default function UnitsTab({
                               <span className="text-sm font-extrabold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">
                                 {item.name}
                               </span>
-                              <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] font-bold">
-                                {item.id}
-                              </span>
                               <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-[#0f6b36] text-[10px] font-bold">
                                 Hareketleri Gör ({itemTxs.length})
                               </span>
                             </div>
                             <div className="text-[11px] font-semibold text-[#0f6b36]">
-                              Aidiyet: {u.name} ({u.id})
+                              Aidiyet: {u.name}
                             </div>
                           </div>
                           {isAdmin && (
@@ -520,7 +517,7 @@ export default function UnitsTab({
                           >
                             <div className="font-bold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">{u.name}</div>
                             <div className="text-[11px] text-slate-400 font-semibold">
-                              {u.id} • {itemCount} kalem ({(u.items || []).map((i) => i.name).join(', ') || 'Kalem yok'})
+                              {itemCount} kalem ({(u.items || []).map((i) => i.name).join(', ') || 'Kalem yok'})
                             </div>
                           </div>
                         )}
@@ -637,7 +634,7 @@ export default function UnitsTab({
               <div key={u.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
                 <div className="p-4 flex flex-col flex-1">
                   <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-2">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{u.id}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">{u.name}</span>
                     <span>{itemCount} kalem</span>
                   </div>
 
@@ -702,9 +699,7 @@ export default function UnitsTab({
                             title="Bu kaleme yapılan hareketleri görmek için tıklayın"
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-bold text-slate-900">
-                                {item.name} <span className="text-[10px] font-mono text-slate-400">({item.id})</span>
-                              </span>
+                              <span className="font-bold text-slate-900">{item.name}</span>
                               <span className="text-[10px] font-semibold text-[#0f6b36]">{u.name}</span>
                             </div>
                             {item.description && <div className="text-[11px] text-slate-500">{item.description}</div>}

@@ -187,7 +187,7 @@ export default function UsersTab({
               <select value={form.unitId} onChange={(e) => setForm({ ...form, unitId: e.target.value })} className={inputCls}>
                 {units.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.name} ({u.id})
+                    {u.name}
                   </option>
                 ))}
               </select>

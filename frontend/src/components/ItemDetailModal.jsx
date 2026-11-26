@@ -60,7 +60,7 @@ export default function ItemDetailModal({
   return (
     <Modal
       title={`${item.name} — Yapılan Hareketler`}
-      subtitle={`${unit?.name || item.unitName || item.unitId} (${item.id})`}
+      subtitle={unit?.name || item.unitName || ''}
       icon={<IconFileText />}
       onClose={onClose}
       maxWidth="max-w-2xl"
@@ -145,7 +145,7 @@ export default function ItemDetailModal({
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 text-left">
-                      <th className="py-2.5 px-3 font-bold border-b border-slate-200">Tarih / No</th>
+                      <th className="py-2.5 px-3 font-bold border-b border-slate-200">Tarih</th>
                       <th className="py-2.5 px-3 font-bold border-b border-slate-200">Tür</th>
                       <th className="py-2.5 px-3 font-bold border-b border-slate-200">Açıklama</th>
                       <th className="py-2.5 px-3 font-bold border-b border-slate-200 text-right">Borç (₺)</th>
@@ -170,10 +170,7 @@ export default function ItemDetailModal({
                                 className="px-2 py-1 text-xs border border-slate-300 rounded bg-white"
                               />
                             ) : (
-                              <>
-                                <div className="font-semibold text-slate-800">{tx.date}</div>
-                                <div className="font-mono text-[10px] text-slate-400">{tx.id}</div>
-                              </>
+                              <div className="font-semibold text-slate-800">{tx.date}</div>
                             )}
                           </td>
                           <td className="py-2.5 px-3 whitespace-nowrap">

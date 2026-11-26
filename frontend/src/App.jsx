@@ -447,7 +447,7 @@ export default function App() {
   };
 
   const handleDeleteTransaction = async (tx) => {
-    if (!window.confirm(`${tx.id} numaralı hareket silinecek. Emin misiniz?`)) return;
+    if (!window.confirm(`"${tx.description}" hareketi silinecek. Emin misiniz?`)) return;
     try {
       await api.transactions.remove(tx.id);
       setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
@@ -553,7 +553,6 @@ export default function App() {
   // --- 8. VERİ BÜTÜNLÜĞÜ İMZALI (SHA-256 CHECKSUM) DIŞA AKTARMA ---
   const exportCSV = async () => {
     const headers = [
-      'İşlem No',
       'Tarih',
       'Birim',
       'Ait Olduğu Kalem',
@@ -562,8 +561,7 @@ export default function App() {
       'Açıklama',
       'Borç (TL)',
       'Ödenen (TL)',
-      'Kaydı Giren',
-      'HMAC-SHA256 İmza'
+      'Kaydı Giren'
     ];
     const lines = filteredTransactions.map((tx) => {
       const uName = units.find((u) => u.id === tx.unitId)?.name || tx.unitId;
@@ -571,7 +569,6 @@ export default function App() {
       const itemName = linkedItem?.name || tx.itemName || tx.category || 'Genel';
       const itemDesc = linkedItem?.description || tx.itemDescription || '';
       return [
-        tx.id,
         tx.date,
         uName,
         itemName,
@@ -580,8 +577,7 @@ export default function App() {
         tx.description,
         tx.debt,
         tx.credit,
-        tx.createdBy,
-        tx.integrityHash || ''
+        tx.createdBy
       ]
         .map(safeCsvCell)
         .join(';');

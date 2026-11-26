@@ -93,8 +93,7 @@ export default function StatementTab({
                 <div className="text-[11px] font-bold tracking-wider text-[#b8952b]">SİLİVRİ SERHENDİ • BİRİM & CARİ TAKİP SİSTEMİ</div>
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 mt-0.5">{report.unit.name} — Cari Hesap Ekstresi</h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Birim Kodu: {report.unit.id} • Yetkili: {report.unit.contact} • Tarih:{' '}
-                  {new Date().toLocaleDateString('tr-TR')}
+                  Yetkili: {report.unit.contact} • Tarih: {new Date().toLocaleDateString('tr-TR')}
                 </p>
               </div>
             </div>
@@ -126,7 +125,7 @@ export default function StatementTab({
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                {report.unit.name} ({report.unit.id}) — Kalem Kalem Borç & Detay Listesi
+                {report.unit.name} — Kalem Kalem Borç & Detay Listesi
               </h3>
               {isAdmin && (
                 <div className="no-print flex flex-wrap items-center gap-1">
@@ -154,7 +153,7 @@ export default function StatementTab({
               <table className="w-full text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600 text-left">
-                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Kalem Kodu & Adı</th>
+                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Kalem Adı</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200">Ait Olduğu Cari & Detay (Neye Ait?)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Borç (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Ödenen (₺)</th>
@@ -192,9 +191,6 @@ export default function StatementTab({
                               title="Bu kaleme yapılan hareketleri görmek için tıklayın"
                             >
                               <span className="group-hover:text-[#0f6b36] group-hover:underline">{item.name}</span>
-                              <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px]">
-                                {item.id}
-                              </span>
                             </div>
                           )}
                         </td>
@@ -209,9 +205,7 @@ export default function StatementTab({
                             />
                           ) : (
                             <div>
-                              <div className="text-[11px] font-semibold text-[#0f6b36]">
-                                {report.unit.name} ({report.unit.id})
-                              </div>
+                              <div className="text-[11px] font-semibold text-[#0f6b36]">{report.unit.name}</div>
                               <div className="text-xs text-slate-600">
                                 {item.description || `${report.unit.name} — ${item.name} Kalemi`}
                               </div>
@@ -378,7 +372,6 @@ export default function StatementTab({
                 <thead>
                   <tr className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600 text-left">
                     <th className="py-2 px-3 font-bold border border-slate-200">Tarih</th>
-                    <th className="py-2 px-3 font-bold border border-slate-200">No</th>
                     <th className="py-2 px-3 font-bold border border-slate-200">Ait Olduğu Kalem</th>
                     <th className="py-2 px-3 font-bold border border-slate-200">Tür</th>
                     <th className="py-2 px-3 font-bold border border-slate-200">Açıklama</th>
@@ -390,7 +383,7 @@ export default function StatementTab({
                 <tbody>
                   {report.rows.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-500 border border-slate-200">
+                      <td colSpan={7} className="py-8 text-center text-slate-500 border border-slate-200">
                         Bu cariye ait hareket bulunmuyor.
                       </td>
                     </tr>
@@ -398,7 +391,6 @@ export default function StatementTab({
                   {report.rows.map((r) => (
                     <tr key={r.id}>
                       <td className="py-2 px-3 border border-slate-200 whitespace-nowrap">{r.date}</td>
-                      <td className="py-2 px-3 border border-slate-200 font-mono text-[11px] text-slate-500 whitespace-nowrap">{r.id}</td>
                       <td className="py-2 px-3 border border-slate-200 whitespace-nowrap font-bold text-[#0f6b36]">
                         {r.itemName || r.category || 'Genel'}
                       </td>

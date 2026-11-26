@@ -63,7 +63,7 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
           >
             {units.map((u) => (
               <option key={u.id} value={u.id}>
-                {u.id} — {u.name}
+                {u.name}
               </option>
             ))}
           </select>
@@ -81,7 +81,7 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
               const rem = (Number(item.debt) || 0) - (Number(item.paid) || 0);
               return (
                 <option key={item.id} value={item.id}>
-                  {item.name} ({item.id}) — Kalan: {formatTRY(rem)}
+                  {item.name} — Kalan: {formatTRY(rem)}
                 </option>
               );
             })}
@@ -92,7 +92,7 @@ export default function TxModal({ units, unitItems = [], defaultUnitId, defaultI
           {selectedItem && (
             <div className="px-2.5 py-2 rounded-lg bg-white border border-slate-200 text-[11px] text-slate-600 space-y-0.5">
               <div className="font-bold text-slate-800">
-                Seçili Kalem: <span className="text-[#0f6b36]">{selectedItem.name}</span> ({selectedItem.id})
+                Seçili Kalem: <span className="text-[#0f6b36]">{selectedItem.name}</span>
               </div>
               {selectedItem.description && (
                 <div>

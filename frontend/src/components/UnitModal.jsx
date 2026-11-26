@@ -37,7 +37,7 @@ export default function UnitModal({ unit, onClose, onSubmit }) {
   return (
     <Modal
       title={unit ? 'Cari / Birim Bilgilerini Düzenle' : 'Yeni Cari / Birim Ekle'}
-      subtitle={unit ? unit.id : 'Cari bilgilerini ve başlangıç kalemlerini seçin'}
+      subtitle={unit ? unit.name : 'Cari bilgilerini ve başlangıç kalemlerini seçin'}
       icon={<IconBuilding />}
       onClose={onClose}
     >

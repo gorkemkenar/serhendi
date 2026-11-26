@@ -160,7 +160,6 @@ export default function LedgerTab({
         <table className="w-full text-xs sm:text-sm border-collapse">
           <thead>
             <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 text-left">
-              <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">No</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Tarih</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Cari / Birim</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">Ait Olduğu Kalem & Detay</th>
@@ -168,14 +167,13 @@ export default function LedgerTab({
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70">İşlem Açıklaması</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70 text-right">Borç (₺)</th>
               <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70 text-right">Ödenen (₺)</th>
-              <th className="py-2.5 px-3.5 font-bold border-r border-slate-200/70 text-center">Bütünlük</th>
               {isAdmin && <th className="py-2.5 px-3.5 font-bold text-center">Sil</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {transactions.length === 0 && (
               <tr>
-                <td colSpan={isAdmin ? 10 : 9} className="py-10 text-center text-slate-500">
+                <td colSpan={isAdmin ? 8 : 7} className="py-10 text-center text-slate-500">
                   Kriterlere uygun cari hareket bulunamadı.
                 </td>
               </tr>
@@ -191,7 +189,6 @@ export default function LedgerTab({
               const credit = Number(tx.credit) || 0;
               return (
                 <tr key={tx.id} className="hover:bg-slate-50/70">
-                  <td className="py-2.5 px-3.5 border-r border-slate-200/70 font-mono text-[11px] text-slate-500 whitespace-nowrap">{tx.id}</td>
                   <td
                     onClick={() => !isEditing(tx, 'date') && startEdit(tx, 'date')}
                     className={`py-2.5 px-3.5 border-r border-slate-200/70 whitespace-nowrap text-slate-600 ${
@@ -223,10 +220,7 @@ export default function LedgerTab({
                         ))}
                       </select>
                     ) : (
-                      <div>
-                        <div>{uObj?.name || tx.unitId}</div>
-                        <div className="text-[10px] font-mono text-slate-400">{tx.unitId}</div>
-                      </div>
+                      <div>{uObj?.name || tx.unitId}</div>
                     )}
                   </td>
 
@@ -249,7 +243,7 @@ export default function LedgerTab({
                         <option value="">Genel (Kalemsiz)</option>
                         {unitSpecificItems.map((it) => (
                           <option key={it.id} value={it.id}>
-                            {it.name} ({it.id})
+                            {it.name}
                           </option>
                         ))}
                       </select>
@@ -257,7 +251,6 @@ export default function LedgerTab({
                       <div>
                         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#0f6b36] border border-emerald-200 text-[11px] font-bold">
                           <span>{itemName}</span>
-                          {tx.itemId && <span className="font-mono text-[10px] opacity-75">({tx.itemId})</span>}
                         </div>
                         {itemDesc && <div className="text-[11px] text-slate-500 mt-0.5">{itemDesc}</div>}
                       </div>
@@ -329,19 +322,6 @@ export default function LedgerTab({
                     } ${isAdmin && credit > 0 ? 'cursor-text hover:bg-amber-50/70' : ''}`}
                   >
                     {isEditing(tx, 'credit') ? cellInput('number', 'w-28 text-right') : credit > 0 ? formatTRY(credit) : '-'}
-                  </td>
-                  <td className="py-2.5 px-3.5 border-r border-slate-200/70 text-center whitespace-nowrap">
-                    <span
-                      title={`HMAC-SHA256 Dijital İmza: ${tx.integrityHash || '-'}`}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
-                        tx.integrityVerified !== false
-                          ? 'bg-emerald-50 text-[#0f6b36] border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
-                    >
-                      <IconShield className="w-3 h-3" />
-                      {tx.integrityHash ? tx.integrityHash.slice(0, 8) : 'Doğrulandı'}
-                    </span>
                   </td>
                   {isAdmin && (
                     <td className="py-2.5 px-3.5 text-center">
