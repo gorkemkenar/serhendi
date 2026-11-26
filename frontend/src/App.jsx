@@ -24,6 +24,7 @@ import UsersTab from './components/UsersTab.jsx';
 import SecurityTab from './components/SecurityTab.jsx';
 import TxModal from './components/TxModal.jsx';
 import UnitModal from './components/UnitModal.jsx';
+import ItemDetailModal from './components/ItemDetailModal.jsx';
 import InstallModal from './components/InstallModal.jsx';
 
 const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id));
@@ -59,6 +60,7 @@ export default function App() {
   const [statementUnitId, setStatementUnitId] = useState('');
 
   const [txModalContext, setTxModalContext] = useState(null); // null | { unitId?: string, itemId?: string }
+  const [selectedItemModal, setSelectedItemModal] = useState(null); // null | { itemId: string, unitId: string }
   const [unitModal, setUnitModal] = useState(null); // null | { unit: Unit | null }
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -746,6 +748,7 @@ export default function App() {
               setStatementUnitId(id);
               setActiveTab('statement');
             }}
+            onSelectItem={(item, u) => setSelectedItemModal({ itemId: item.id, unitId: u?.id || item.unitId })}
             onCreateItem={handleCreateUnitItem}
             onUpdateItem={handleUpdateUnitItem}
             onDeleteItem={handleDeleteUnitItem}
@@ -782,6 +785,7 @@ export default function App() {
             isUnitObserver={isUnitObserver}
             statementUnitId={statementUnitId}
             onSelectUnit={setStatementUnitId}
+            onSelectItem={(item, u) => setSelectedItemModal({ itemId: item.id, unitId: u?.id || item.unitId })}
             onCreateItem={handleCreateUnitItem}
             onUpdateItem={handleUpdateUnitItem}
             onDeleteItem={handleDeleteUnitItem}
@@ -825,6 +829,18 @@ export default function App() {
           defaultItemId={txModalContext.itemId || ''}
           onClose={() => setTxModalContext(null)}
           onSubmit={handleCreateTransaction}
+        />
+      )}
+
+      {selectedItemModal && (
+        <ItemDetailModal
+          item={unitItems.find((i) => i.id === selectedItemModal.itemId)}
+          unit={units.find((u) => u.id === selectedItemModal.unitId)}
+          transactions={transactions}
+          isAdmin={isAdmin}
+          onClose={() => setSelectedItemModal(null)}
+          onNewTx={(uId, itId) => setTxModalContext({ unitId: uId || '', itemId: itId || '' })}
+          onDeleteTx={handleDeleteTransaction}
         />
       )}
 

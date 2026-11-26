@@ -28,6 +28,7 @@ export default function UnitsTab({
   onQuickSave,
   onDeleteUnit,
   onShowStatement,
+  onSelectItem,
   onCreateItem,
   onUpdateItem,
   onDeleteItem
@@ -214,14 +215,23 @@ export default function UnitsTab({
                     </form>
                   ) : (
                     <>
-                      {/* ÜST BAŞLIK: KALEM ADI + HANGİ CARİYE VE NEYE AİT OLDUĞU */}
+                      {/* ÜST BAŞLIK: KALEM ADI + HANGİ CARİYE VE NEYE AİT OLDUĞU (TIKLANINCA HAREKETLER POP-UP AÇILIR) */}
                       <div className="border-b border-slate-100 pb-2 space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
+                          <div
+                            onClick={() => onSelectItem?.(item, u)}
+                            className="cursor-pointer group flex-1"
+                            title="Bu kaleme yapılan hareketleri görmek için tıklayın"
+                          >
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-sm font-extrabold text-slate-900">{item.name}</span>
+                              <span className="text-sm font-extrabold text-slate-900 group-hover:text-[#0f6b36] group-hover:underline">
+                                {item.name}
+                              </span>
                               <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px] font-bold">
                                 {item.id}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-[#0f6b36] text-[10px] font-bold">
+                                Hareketleri Gör ({itemTxs.length})
                               </span>
                             </div>
                             <div className="text-[11px] font-semibold text-[#0f6b36]">
@@ -271,35 +281,21 @@ export default function UnitsTab({
                         </div>
                       </div>
 
-                      {/* BORÇ | ÖDENEN | KALAN */}
-                      <div className="grid grid-cols-3 gap-1.5 text-center">
-                        <div
-                          onClick={() =>
-                            isAdmin &&
-                            setEditItem({ id: item.id, name: item.name, description: item.description || '', debt, paid })
-                          }
-                          className={`p-2 rounded-lg bg-rose-50/70 border border-rose-100 ${isAdmin ? 'cursor-pointer hover:border-rose-300' : ''}`}
-                        >
+                      {/* BORÇ | ÖDENEN | KALAN (TIKLANINCA KALEM HAREKETLERİ POP-UP AÇILIR) */}
+                      <div
+                        onClick={() => onSelectItem?.(item, u)}
+                        className="grid grid-cols-3 gap-1.5 text-center cursor-pointer"
+                        title="Kaleme yapılan hareketleri görmek için tıklayın"
+                      >
+                        <div className="p-2 rounded-lg bg-rose-50/70 border border-rose-100 hover:border-rose-300">
                           <div className="text-[10px] font-bold uppercase text-rose-700">Borç</div>
                           <div className="text-xs font-extrabold text-rose-600 tabular-nums mt-0.5">{formatTRY(debt)}</div>
                         </div>
-                        <div
-                          onClick={() =>
-                            isAdmin &&
-                            setEditItem({ id: item.id, name: item.name, description: item.description || '', debt, paid })
-                          }
-                          className={`p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 ${isAdmin ? 'cursor-pointer hover:border-emerald-300' : ''}`}
-                        >
+                        <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 hover:border-emerald-300">
                           <div className="text-[10px] font-bold uppercase text-[#0f6b36]">Ödenen</div>
                           <div className="text-xs font-extrabold text-[#0f6b36] tabular-nums mt-0.5">{formatTRY(paid)}</div>
                         </div>
-                        <div
-                          onClick={() =>
-                            isAdmin &&
-                            setEditItem({ id: item.id, name: item.name, description: item.description || '', debt, paid })
-                          }
-                          className={`p-2 rounded-lg bg-slate-100 border border-slate-200 ${isAdmin ? 'cursor-pointer hover:border-slate-300' : ''}`}
-                        >
+                        <div className="p-2 rounded-lg bg-slate-100 border border-slate-200 hover:border-slate-300">
                           <div className="text-[10px] font-bold uppercase text-slate-600">Kalan</div>
                           <div
                             className={`text-xs font-black tabular-nums mt-0.5 ${
@@ -728,7 +724,12 @@ export default function UnitsTab({
                         const p = Number(item.paid) || 0;
                         const r = d - p;
                         return (
-                          <div key={item.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-1">
+                          <div
+                            key={item.id}
+                            onClick={() => onSelectItem?.(item, u)}
+                            className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 hover:border-[#0f6b36] text-xs space-y-1 cursor-pointer transition"
+                            title="Bu kaleme yapılan hareketleri görmek için tıklayın"
+                          >
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-slate-900">
                                 {item.name} <span className="text-[10px] font-mono text-slate-400">({item.id})</span>

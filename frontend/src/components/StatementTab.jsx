@@ -18,6 +18,7 @@ export default function StatementTab({
   isUnitObserver,
   statementUnitId,
   onSelectUnit,
+  onSelectItem,
   onCreateItem,
   onUpdateItem,
   onDeleteItem
@@ -185,8 +186,12 @@ export default function StatementTab({
                               className="w-full px-2 py-1 text-xs border border-[#0f6b36] rounded bg-white"
                             />
                           ) : (
-                            <div className="flex items-center gap-1.5">
-                              <span>{item.name}</span>
+                            <div
+                              onClick={() => onSelectItem?.(item, report.unit)}
+                              className="flex items-center gap-1.5 cursor-pointer group"
+                              title="Bu kaleme yapılan hareketleri görmek için tıklayın"
+                            >
+                              <span className="group-hover:text-[#0f6b36] group-hover:underline">{item.name}</span>
                               <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono text-[10px]">
                                 {item.id}
                               </span>
