@@ -10,15 +10,15 @@ export default function Modal({ title, subtitle, icon, onClose, children, maxWid
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4 no-print"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4 no-print"
       onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}
     >
-      <div className={`w-full ${maxWidth} bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto`}>
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100">
+      <div className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[88vh] flex flex-col overflow-hidden`}>
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             {icon && <div className="p-2 rounded-xl bg-emerald-50 text-[#0f6b36] shrink-0">{icon}</div>}
             <div className="min-w-0">
-              <h3 className="text-base font-extrabold text-slate-900 truncate">{title}</h3>
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 truncate">{title}</h3>
               {subtitle && <p className="text-xs text-slate-500 truncate">{subtitle}</p>}
             </div>
           </div>
@@ -26,7 +26,7 @@ export default function Modal({ title, subtitle, icon, onClose, children, maxWid
             <IconX />
           </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

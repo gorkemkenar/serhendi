@@ -112,7 +112,7 @@ export default function ItemDetailModal({
               Bu kaleme ait kayıtlı cari hareket bulunmuyor.
             </div>
           ) : (
-            <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-80 overflow-y-auto">
+            <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-60 sm:max-h-72 overflow-y-auto overscroll-contain">
               {itemTxs.map((tx) => {
                 const tObj = TRANSACTION_TYPES.find((t) => t.label === tx.type);
                 const txDebt = Number(tx.debt) || 0;
