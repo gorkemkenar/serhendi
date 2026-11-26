@@ -1,8 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 from .security import compute_transaction_hash, decrypt_sensitive, encrypt_sensitive, mask_phone
+
+
+def current_year():
+    """Kalemlerin varsayılan dönem yılı (her yıl kalemler ve bakiyeler sıfırdan başlar)."""
+    return timezone.localdate().year
 
 
 def _next_code(model, prefix, width, start):
@@ -168,6 +174,7 @@ class UnitItem(models.Model):
     description = models.CharField('Kalem Detayı / Neye Ait', max_length=255, blank=True, default='')
     debt = models.DecimalField('Borç (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     paid = models.DecimalField('Ödenen (₺)', max_digits=14, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    year = models.PositiveSmallIntegerField('Dönem Yılı', default=current_year, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -58,11 +58,12 @@ class UnitItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitItem
-        fields = ['id', 'unitId', 'unitName', 'name', 'description', 'debt', 'paid', 'remaining']
+        fields = ['id', 'unitId', 'unitName', 'name', 'description', 'debt', 'paid', 'remaining', 'year']
         read_only_fields = ['id', 'unitName', 'remaining']
         extra_kwargs = {
             'debt': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
             'paid': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
+            'year': {'required': False, 'min_value': 2000, 'max_value': 2100},
         }
 
     def get_remaining(self, obj):
@@ -167,14 +168,21 @@ class TransactionSerializer(serializers.ModelSerializer):
         item = attrs.get('item', getattr(self.instance, 'item', None))
         category = (attrs.get('category') or '').strip()
 
-        # Eğer kalem seçilmişse veya yeni kalem adı (category) girilmişse cari ile eşleştir
-        if item is not None and unit is not None and item.unit_id != unit.id:
-            # Farklı birimin kalemi seçildiyse aynı isimde bu birimde ara veya oluştur
-            item, _ = UnitItem.objects.get_or_create(unit=unit, name=item.name)
+        # Hareketin tarihi hangi yıldaysa kalem de o yılın dönemine bağlanır (her yıl sıfırdan başlar)
+        tx_date = attrs.get('date') or getattr(self.instance, 'date', None)
+        tx_year = tx_date.year if tx_date else timezone.localdate().year
+
+        def _find_or_create_item(name):
+            found = UnitItem.objects.filter(unit=unit, name__iexact=name, year=tx_year).order_by('created_at').first()
+            return found or UnitItem.objects.create(unit=unit, name=name, year=tx_year)
+
+        # Farklı birimin veya farklı yılın kalemi seçildiyse, aynı isimde bu birim + yıl için ara veya oluştur
+        if item is not None and unit is not None and (item.unit_id != unit.id or item.year != tx_year):
+            item = _find_or_create_item(item.name)
             attrs['item'] = item
 
         if item is None and unit is not None and category and category != 'Genel':
-            item, _ = UnitItem.objects.get_or_create(unit=unit, name=category)
+            item = _find_or_create_item(category)
             attrs['item'] = item
 
         if item is not None:

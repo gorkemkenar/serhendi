@@ -5,6 +5,7 @@ import { formatTRY, primaryBtn } from '../constants.js';
 
 export default function StatementTab({
   report,
+  year,
   units,
   isAdmin,
   isUnitObserver,
@@ -86,7 +87,7 @@ export default function StatementTab({
                   SİLİVRİ SERHENDİ • BİRİM & CARİ TAKİP SİSTEMİ
                 </div>
                 <h2 className="text-base sm:text-xl font-black text-slate-900 mt-0.5 truncate">
-                  {report.unit.name} — Cari Hesap Ekstresi
+                  {report.unit.name} — {year ? `${year} ` : ''}Cari Hesap Ekstresi
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
                   Yetkili: {report.unit.contact} • Tarih: {new Date().toLocaleDateString('tr-TR')}

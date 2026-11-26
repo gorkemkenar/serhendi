@@ -45,6 +45,17 @@ MAX_FAILED_LOGINS = 5
 LOCKOUT_MINUTES = 15
 
 
+def _date_for_year(year):
+    """Kaleme otomatik eklenen hareketin tarihi kalemin dönem yılı içinde kalsın."""
+    from datetime import date as _date
+
+    today = timezone.localdate()
+    if not year or int(year) == today.year:
+        return today
+    year = int(year)
+    return _date(year, 12, 31) if year < today.year else _date(year, 1, 1)
+
+
 def _restrict_to_user_unit(qs, user, field):
     """1. Kırık Erişim Kontrolü (Broken Access Control): Birim gözlemcisi yalnızca kendi birimini görür."""
     if user.effective_role == User.Role.VIEWER_UNIT:
@@ -329,12 +340,15 @@ class UnitItemViewSet(viewsets.ModelViewSet):
         qs = _restrict_to_user_unit(UnitItem.objects.select_related('unit'), user, 'unit_id')
         if requested_unit:
             qs = qs.filter(unit_id=requested_unit)
+        requested_year = self.request.query_params.get('year')
+        if requested_year and requested_year.isdigit():
+            qs = qs.filter(year=int(requested_year))
         return qs
 
     def perform_create(self, serializer):
         item = serializer.save()
         actor_name = self.request.user.display_name
-        today = timezone.localdate()
+        today = _date_for_year(item.year)
         if (item.debt or 0) > 0:
             Transaction.objects.create(
                 date=today,
@@ -378,7 +392,7 @@ class UnitItemViewSet(viewsets.ModelViewSet):
             Transaction.objects.filter(item=item).update(category=item.name)
 
         actor_name = self.request.user.display_name
-        today = timezone.localdate()
+        today = _date_for_year(item.year)
         diff_debt = (item.debt or 0) - old_debt
         diff_paid = (item.paid or 0) - old_paid
 

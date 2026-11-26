@@ -59,6 +59,10 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statementUnitId, setStatementUnitId] = useState('');
 
+  // --- YIL / DÖNEM SEÇİMİ (Her yıl kalemler ve bakiyeler sıfırdan başlar) ---
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
   const [txModalContext, setTxModalContext] = useState(null); // null | { unitId?: string, itemId?: string }
   const [selectedItemModal, setSelectedItemModal] = useState(null); // null | { itemId: string, unitId: string }
   const [unitModal, setUnitModal] = useState(null); // null | { unit: Unit | null }
@@ -90,6 +94,7 @@ export default function App() {
     setTypeFilter('ALL');
     setSearchQuery('');
     setUnitSearch('');
+    setSelectedYear(new Date().getFullYear());
   }, []);
 
   const handleError = useCallback(
@@ -164,20 +169,41 @@ export default function App() {
   }, [units, statementUnitId, isUnitObserver, currentUser]);
 
   // --- HESAPLAMALAR ---
+  // Seçili yılın kalemleri ve hareketleri
+  const availableYears = useMemo(() => {
+    const years = new Set([currentYear]);
+    unitItems.forEach((i) => i.year && years.add(Number(i.year)));
+    transactions.forEach((t) => {
+      const y = Number(String(t.date || '').slice(0, 4));
+      if (y) years.add(y);
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [unitItems, transactions, currentYear]);
+
+  const yearItems = useMemo(
+    () => unitItems.filter((i) => Number(i.year || currentYear) === selectedYear),
+    [unitItems, selectedYear, currentYear]
+  );
+
+  const yearTransactions = useMemo(
+    () => transactions.filter((t) => String(t.date || '').startsWith(String(selectedYear))),
+    [transactions, selectedYear]
+  );
+
   const visibleUnitsWithSummary = useMemo(() => {
     const q = unitSearch.trim().toLocaleLowerCase('tr-TR');
     return units
       .filter((u) => {
         if (!q) return true;
-        const uItems = unitItems.filter((i) => i.unitId === u.id);
+        const uItems = yearItems.filter((i) => i.unitId === u.id);
         return (
           [u.name, u.contact, u.phone, u.id].some((v) => String(v || '').toLocaleLowerCase('tr-TR').includes(q)) ||
           uItems.some((i) => String(i.name || '').toLocaleLowerCase('tr-TR').includes(q))
         );
       })
       .map((unit) => {
-        const unitTxs = transactions.filter((t) => t.unitId === unit.id).sort(byDateDesc);
-        const items = unitItems.filter((i) => i.unitId === unit.id);
+        const unitTxs = yearTransactions.filter((t) => t.unitId === unit.id).sort(byDateDesc);
+        const items = yearItems.filter((i) => i.unitId === unit.id);
         const itemsDebt = items.reduce((acc, i) => acc + (Number(i.debt) || 0), 0);
         const itemsPaid = items.reduce((acc, i) => acc + (Number(i.paid) || 0), 0);
         // Kaleme bağlı olmayan (Genel / bağımsız) hareketleri de toplama dahil et;
@@ -197,7 +223,7 @@ export default function App() {
           txCount: unitTxs.length
         };
       });
-  }, [units, unitItems, transactions, unitSearch]);
+  }, [units, yearItems, yearTransactions, unitSearch]);
 
   const kpiStats = useMemo(() => {
     const totalDebt = visibleUnitsWithSummary.reduce((s, u) => s + u.totalDebt, 0);
@@ -207,7 +233,7 @@ export default function App() {
 
   const filteredTransactions = useMemo(() => {
     const q = searchQuery.trim().toLocaleLowerCase('tr-TR');
-    return transactions
+    return yearTransactions
       .filter((tx) => {
         if (unitFilter !== 'ALL' && tx.unitId !== unitFilter) return false;
         if (itemFilter !== 'ALL') {
@@ -228,18 +254,18 @@ export default function App() {
         return true;
       })
       .sort(byDateDesc);
-  }, [transactions, unitFilter, itemFilter, typeFilter, searchQuery, units]);
+  }, [yearTransactions, unitFilter, itemFilter, typeFilter, searchQuery, units]);
 
   const statementReport = useMemo(() => {
     const targetId = isUnitObserver ? currentUser?.unitId : statementUnitId;
     const rawUnit = units.find((u) => u.id === targetId) || units[0];
     if (!rawUnit) return { unit: null, rows: [], totalDebt: 0, totalCredit: 0, netBalance: 0 };
 
-    const items = unitItems.filter((i) => i.unitId === rawUnit.id);
+    const items = yearItems.filter((i) => i.unitId === rawUnit.id);
     const unit = { ...rawUnit, items };
 
     let running = 0;
-    const rows = transactions
+    const rows = yearTransactions
       .filter((t) => t.unitId === unit.id)
       .sort(byDateAsc)
       .map((r) => {
@@ -255,7 +281,7 @@ export default function App() {
     const totalDebt = items.length > 0 ? itemsDebt + unlinkedDebt : unlinkedDebt;
     const totalCredit = items.length > 0 ? itemsPaid + unlinkedCredit : unlinkedCredit;
     return { unit, rows, totalDebt, totalCredit, netBalance: totalDebt - totalCredit };
-  }, [units, unitItems, transactions, statementUnitId, isUnitObserver, currentUser]);
+  }, [units, yearItems, yearTransactions, statementUnitId, isUnitObserver, currentUser]);
 
   // --- OTURUM İŞLEMLERİ ---
   const handleLogin = async (username, password, otpCode = '') => {
@@ -307,7 +333,8 @@ export default function App() {
                 name: it.name,
                 description: '',
                 debt: '0.00',
-                paid: '0.00'
+                paid: '0.00',
+                year: selectedYear
               });
               createdItems.push(ci);
             } catch {
@@ -357,7 +384,7 @@ export default function App() {
   // --- CARİ KALEM İŞLEMLERİ (KUMANYA, KANDİL SİMİDİ, PATATES -> BORÇ / ÖDENEN / KALAN) ---
   const handleCreateUnitItem = async (data) => {
     try {
-      const created = await api.unitItems.create(data);
+      const created = await api.unitItems.create({ ...data, year: data.year || selectedYear });
       setUnitItems((prev) => [...prev, created]);
       const freshTxs = await api.transactions.list().catch(() => null);
       if (freshTxs) setTransactions(freshTxs);
@@ -690,6 +717,19 @@ export default function App() {
               <span className="hidden sm:inline">Çıkış Yap</span>
               <span className="sm:hidden">Çıkış</span>
             </button>
+            {/* YIL / DÖNEM SEÇİCİ (EN SAĞ ÜST) */}
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-[#0f6b36] hover:bg-[#095327] text-white border border-[#0f6b36] cursor-pointer focus:outline-none"
+              title="Dönem yılını seçin"
+            >
+              {availableYears.map((y) => (
+                <option key={y} value={y} className="bg-white text-slate-900">
+                  {y}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -796,7 +836,7 @@ export default function App() {
           <LedgerTab
             transactions={filteredTransactions}
             units={units}
-            unitItems={unitItems}
+            unitItems={yearItems}
             isAdmin={isAdmin}
             isUnitObserver={isUnitObserver}
             searchQuery={searchQuery}
@@ -817,6 +857,7 @@ export default function App() {
         {activeTab === 'statement' && (
           <StatementTab
             report={statementReport}
+            year={selectedYear}
             units={units}
             isAdmin={isAdmin}
             isUnitObserver={isUnitObserver}
@@ -861,7 +902,8 @@ export default function App() {
       {txModalContext && isAdmin && (
         <TxModal
           units={units}
-          unitItems={unitItems}
+          unitItems={yearItems}
+          defaultDate={selectedYear === currentYear ? '' : `${selectedYear}-01-01`}
           defaultUnitId={txModalContext.unitId || (unitFilter !== 'ALL' ? unitFilter : statementUnitId)}
           defaultItemId={txModalContext.itemId || ''}
           onClose={() => setTxModalContext(null)}
@@ -873,7 +915,7 @@ export default function App() {
         <ItemDetailModal
           item={unitItems.find((i) => i.id === selectedItemModal.itemId)}
           unit={units.find((u) => u.id === selectedItemModal.unitId)}
-          transactions={transactions}
+          transactions={yearTransactions}
           isAdmin={isAdmin}
           onClose={() => setSelectedItemModal(null)}
           onNewTx={(uId, itId) => setTxModalContext({ unitId: uId || '', itemId: itId || '' })}

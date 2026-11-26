@@ -5,11 +5,11 @@ import { TRANSACTION_TYPES, formatTRY, inputCls, labelCls, primaryBtn, todayISO 
 
 const PRESET_CATEGORIES = ['Kumanya', 'Kandil Simidi', 'Patates', 'Kurban', 'Takvim / Dergi', 'Genel'];
 
-export default function TxModal({ units, unitItems = [], defaultUnitId, defaultItemId = '', onClose, onSubmit }) {
+export default function TxModal({ units, unitItems = [], defaultUnitId, defaultItemId = '', defaultDate = '', onClose, onSubmit }) {
   const [busy, setBusy] = useState(false);
   const initialUnitId = defaultUnitId || units[0]?.id || '';
   const [form, setForm] = useState({
-    date: todayISO(),
+    date: defaultDate || todayISO(),
     unitId: initialUnitId,
     itemId: defaultItemId || '',
     customCategory: '',
