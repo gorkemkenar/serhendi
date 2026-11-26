@@ -536,7 +536,13 @@ export default function UnitsTab({
                             className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#0f6b36]"
                           />
                         ) : (
-                          u.contact
+                          <span
+                            onClick={() => startQuick(u)}
+                            className={isAdmin ? 'cursor-pointer hover:text-[#0f6b36] hover:underline font-medium' : ''}
+                            title={isAdmin ? 'Yetkili adını düzenlemek için tıklayın' : ''}
+                          >
+                            {u.contact}
+                          </span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-rose-600 tabular-nums whitespace-nowrap">{formatTRY(u.totalDebt)}</td>

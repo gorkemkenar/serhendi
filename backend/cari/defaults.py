@@ -1,7 +1,7 @@
 """Varsayılan 8 birim, örnek hareketler ve Rol Hiyerarşisine uygun güvenli şifreli kullanıcılar."""
 from decimal import Decimal
 
-from django.db import transaction as db_transaction
+from django.db import models, transaction as db_transaction
 
 from .models import SecurityAuditLog, Transaction, Unit, UnitItem, User
 from .security import WEAK_PASSWORDS, encrypt_sensitive
@@ -163,9 +163,11 @@ def load_defaults(force_reset: bool = False):
             UnitItem.objects.filter(pk=item.pk).update(description=fallback_desc)
             item.description = fallback_desc
 
-        # Eğer bu kaleme bağlı hiç hareket yoksa ve kalemin borç/ödenen tutarı varsa başlangıç hareketlerini oluştur
-        has_linked_tx = Transaction.objects.filter(item=item).exists()
-        if not has_linked_tx:
+        # Eğer bu kaleme bağlı hiç hareket yoksa ve veritabanında bu birime ait hiç hareket yoksa başlangıç hareketi oluştur
+        has_linked_tx = Transaction.objects.filter(
+            models.Q(item=item) | models.Q(unit=item.unit, category__iexact=item.name)
+        ).exists()
+        if not has_linked_tx and not has_any_units:
             # Aynı birimde eşleşmeyen HRK-1001..1013 varsa ve bu kalem Kumanya ise bağla, yoksa kalemin kendi hareketini oluştur
             if (item.debt or 0) > 0:
                 Transaction.objects.create(
