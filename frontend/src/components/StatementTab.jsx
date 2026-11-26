@@ -121,39 +121,15 @@ export default function StatementTab({
             </div>
           </div>
 
-          {/* 1. BÖLÜM: KALEM KALEM BORÇ & DETAY LİSTESİ */}
+          {/* 1. BÖLÜM: KALEM LİSTESİ */}
           <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                {report.unit.name} — Kalem Kalem Borç & Detay Listesi
-              </h3>
-              {isAdmin && (
-                <div className="no-print flex flex-wrap items-center gap-1">
-                  {PRESET_ITEMS.map((p) => (
-                    <button
-                      key={p.name}
-                      type="button"
-                      onClick={() =>
-                        setNewForm((prev) => ({
-                          ...prev,
-                          name: p.name
-                        }))
-                      }
-                      className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-[#0f6b36] cursor-pointer"
-                    >
-                      + {p.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-900">Kalemler</h3>
 
             <div className="overflow-x-auto">
               <table className="w-full text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-[11px] uppercase tracking-wider text-slate-600 text-left">
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200">Kalem Adı</th>
-                    <th className="py-2.5 px-3.5 font-bold border border-slate-200">Cari Detay</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Borç (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Ödenen (₺)</th>
                     <th className="py-2.5 px-3.5 font-bold border border-slate-200 text-right">Kalan (₺)</th>
@@ -163,7 +139,7 @@ export default function StatementTab({
                 <tbody>
                   {unitItems.length === 0 && (
                     <tr>
-                      <td colSpan={isAdmin ? 6 : 5} className="py-6 text-center text-slate-500 border border-slate-200">
+                      <td colSpan={isAdmin ? 5 : 4} className="py-6 text-center text-slate-500 border border-slate-200">
                         Henüz kalem eklenmemiş.
                       </td>
                     </tr>
@@ -187,25 +163,8 @@ export default function StatementTab({
                             <div
                               onClick={() => onSelectItem?.(item, report.unit)}
                               className="flex items-center gap-1.5 cursor-pointer group"
-                              title="Bu kaleme yapılan hareketleri görmek için tıklayın"
                             >
                               <span className="group-hover:text-[#0f6b36] group-hover:underline">{item.name}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-3.5 border border-slate-200 text-slate-600">
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              placeholder="Cari detay..."
-                              value={editItem.description || ''}
-                              onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
-                              className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                            />
-                          ) : (
-                            <div>
-                              <div className="text-[11px] font-semibold text-[#0f6b36]">{report.unit.name}</div>
-                              {item.description && <div className="text-xs text-slate-600">{item.description}</div>}
                             </div>
                           )}
                         </td>
@@ -303,56 +262,37 @@ export default function StatementTab({
             {isAdmin && (
               <form
                 onSubmit={handleAdd}
-                className="no-print p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-5 gap-2 items-end"
+                className="no-print p-2.5 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-2 items-center"
               >
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Yeni Kalem Adı</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Örn: Kumanya, Patates..."
-                    value={newForm.name}
-                    onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Cari Detay</label>
-                  <input
-                    type="text"
-                    placeholder="İsteğe bağlı detay..."
-                    value={newForm.description}
-                    onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-rose-700 mb-1">Borç (₺)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={newForm.debt}
-                    onChange={(e) => setNewForm({ ...newForm, debt: e.target.value })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-[#0f6b36] mb-1">Ödenen (₺)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={newForm.paid}
-                    onChange={(e) => setNewForm({ ...newForm, paid: e.target.value })}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="Kalem Adı (Örn: Kumanya)"
+                  value={newForm.name}
+                  onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Borç (₺)"
+                  value={newForm.debt}
+                  onChange={(e) => setNewForm({ ...newForm, debt: e.target.value })}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ödenen (₺)"
+                  value={newForm.paid}
+                  onChange={(e) => setNewForm({ ...newForm, paid: e.target.value })}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white tabular-nums"
+                />
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0f6b36] hover:bg-[#095327] text-white cursor-pointer"
                 >
                   <IconPlus className="w-3.5 h-3.5" />
                   Kalem Ekle
