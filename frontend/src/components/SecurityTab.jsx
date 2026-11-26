@@ -1,26 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
-import { IconCheck, IconLock, IconShield, IconX } from '../icons.jsx';
+import { IconEye, IconEyeOff, IconLock, IconShield } from '../icons.jsx';
 import { inputCls, labelCls, primaryBtn } from '../constants.js';
 
-export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshUsers, onSelfPasswordChanged }) {
+export default function SecurityTab({ currentUser, onNotify, onSelfPasswordChanged }) {
   const isOwner = currentUser?.role === 'owner' || currentUser?.isOwner;
   const [section, setSection] = useState('settings'); // 'settings' | 'steps' | 'logs'
   const [overview, setOverview] = useState(null);
-  const [twoFA, setTwoFA] = useState(null);
-  const [otpInput, setOtpInput] = useState('');
-  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '' });
-  const [urlToCheck, setUrlToCheck] = useState('');
-  const [urlResult, setUrlResult] = useState(null);
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState(false);
 
   const loadSecurity = useCallback(async () => {
     setLoading(true);
     try {
-      const [ov, tfa] = await Promise.all([api.security.overview(), api.twoFactor.status()]);
+      const ov = await api.security.overview();
       setOverview(ov);
-      setTwoFA(tfa);
     } catch (err) {
       onNotify?.(err?.message || 'Güvenlik verileri alınamadı.', 'error');
     } finally {
@@ -32,83 +29,21 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
     loadSecurity();
   }, [loadSecurity]);
 
-  const handleEnable2FA = async (e) => {
-    e.preventDefault();
-    setBusyAction(true);
-    try {
-      const res = await api.twoFactor.enable(otpInput);
-      onNotify?.(res.detail || '2FA aktifleştirildi.');
-      setOtpInput('');
-      await loadSecurity();
-      onRefreshUsers?.();
-    } catch (err) {
-      onNotify?.(err?.message || '2FA doğrulanamadı.', 'error');
-    } finally {
-      setBusyAction(false);
-    }
-  };
-
-  const handleDisable2FA = async () => {
-    setBusyAction(true);
-    try {
-      const res = await api.twoFactor.disable();
-      onNotify?.(res.detail || '2FA devre dışı bırakıldı.');
-      await loadSecurity();
-      onRefreshUsers?.();
-    } catch (err) {
-      onNotify?.(err?.message || 'İşlem başarısız.', 'error');
-    } finally {
-      setBusyAction(false);
-    }
-  };
-
   const handleChangeOwnPassword = async (e) => {
     e.preventDefault();
+    if (pwdForm.newPassword.trim() !== pwdForm.confirmPassword.trim()) {
+      onNotify?.('Yeni şifre ve şifre tekrarı birbiriyle eşleşmiyor!', 'error');
+      return;
+    }
     setBusyAction(true);
     try {
-      const res = await api.changeOwnPassword(pwdForm.currentPassword, pwdForm.newPassword);
-      setPwdForm({ currentPassword: '', newPassword: '' });
-      onNotify?.(res.detail || 'Şifreniz güncellendi.');
+      const res = await api.changeOwnPassword(pwdForm.currentPassword.trim(), pwdForm.newPassword.trim());
+      setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      onNotify?.(res.detail || 'Şifreniz başarıyla güncellendi.');
       onSelfPasswordChanged?.(res.user);
       await loadSecurity();
     } catch (err) {
       onNotify?.(err?.message || 'Şifre güncellenemedi.', 'error');
-    } finally {
-      setBusyAction(false);
-    }
-  };
-
-  const handleVerifyIntegrity = async (reseal = false) => {
-    setBusyAction(true);
-    try {
-      const res = await api.security.verifyIntegrity(reseal);
-      onNotify?.(
-        res.intact
-          ? `Veri bütünlüğü doğrulandı: ${res.verified}/${res.total} kayıt sağlam.`
-          : `Dikkat: ${res.tampered.length} kayıtta bütünlük uyuşmazlığı bulundu!`,
-        res.intact ? 'success' : 'error'
-      );
-      await loadSecurity();
-    } catch (err) {
-      onNotify?.(err?.message || 'Bütünlük kontrolü yapılamadı.', 'error');
-    } finally {
-      setBusyAction(false);
-    }
-  };
-
-  const handleCheckUrl = async (e, presetUrl) => {
-    e?.preventDefault?.();
-    const target = (presetUrl !== undefined ? presetUrl : urlToCheck).trim();
-    if (!target) return;
-    setUrlToCheck(target);
-    setBusyAction(true);
-    try {
-      const res = await api.security.validateUrl(target);
-      setUrlResult({ ok: true, message: `Güvenli bağlantı (${res.host})` });
-      await loadSecurity();
-    } catch (err) {
-      setUrlResult({ ok: false, message: err?.message || 'SSRF Koruması tarafından engellendi.' });
-      await loadSecurity();
     } finally {
       setBusyAction(false);
     }
@@ -131,9 +66,9 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
             <IconShield className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-900">Güvenlik & Denetim</h2>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">Güvenlik & Şifre Yönetimi</h2>
             <p className="text-xs text-slate-500">
-              2FA doğrulama, şifre güncelleme, veri bütünlüğü ve OWASP güvenlik kontrolleri
+              Hesap şifrenizi güvenli şekilde güncelleyebilir ve sistem denetim kayıtlarını inceleyebilirsiniz
             </p>
           </div>
         </div>
@@ -147,7 +82,7 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
               section === 'settings' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
             }`}
           >
-            Ayarlar & 2FA
+            Şifremi Değiştir
           </button>
           {isOwner && (
             <button
@@ -172,173 +107,86 @@ export default function SecurityTab({ currentUser, isAdmin, onNotify, onRefreshU
         </div>
       </div>
 
-      {/* 1. BÖLÜM: AYARLAR, ŞİFRE, 2FA & HIZLI DENETİM */}
+      {/* 1. BÖLÜM: ŞİFREMİ DEĞİŞTİR */}
       {section === 'settings' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* KENDİ ŞİFRENİ GÜNCELLE */}
-          <form onSubmit={handleChangeOwnPassword} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-              <IconLock className="w-4 h-4 text-slate-600" />
-              <h3 className="text-sm font-bold text-slate-900">Şifremi Değiştir (@{currentUser.username})</h3>
-            </div>
-            <div>
-              <label className={labelCls}>Mevcut Şifre</label>
-              <input
-                type="password"
-                required
-                placeholder="Mevcut şifreniz"
-                autoComplete="current-password"
-                value={pwdForm.currentPassword}
-                onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Yeni Güçlü Şifre</label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                placeholder="En az 8 karakter (Büyük/küçük harf + rakam)"
-                autoComplete="new-password"
-                value={pwdForm.newPassword}
-                onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-            <button type="submit" disabled={busyAction} className={`${primaryBtn} w-full py-2.5 text-xs sm:text-sm`}>
-              Şifremi Güncelle
-            </button>
-          </form>
-
-          {/* İKİ ADIMLI DOĞRULAMA (2FA) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <IconShield className="w-4 h-4 text-slate-600" />
-                <h3 className="text-sm font-bold text-slate-900">İki Adımlı Doğrulama (2FA)</h3>
+        <div className="max-w-lg mx-auto">
+          <form onSubmit={handleChangeOwnPassword} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <div className="p-2 rounded-xl bg-emerald-50 text-[#0f6b36]">
+                <IconLock className="w-4 h-4" />
               </div>
-              <span
-                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
-                  twoFA?.enabled ? 'bg-emerald-50 text-[#0f6b36] border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                }`}
-              >
-                {twoFA?.enabled ? 'Açık' : 'Kapalı'}
-              </span>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Şifremi Değiştir (@{currentUser.username})</h3>
+                <p className="text-[11px] text-slate-500">
+                  En az 8 karakter; büyük harf, küçük harf ve rakam içeren güçlü bir şifre belirleyin.
+                </p>
+              </div>
             </div>
 
-            {twoFA && (
-              <div className="space-y-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-                  <div className="text-slate-500">Anahtar Kodu:</div>
-                  <div className="font-mono font-semibold text-slate-800 break-all select-all">{twoFA.secret}</div>
-                  <div className="pt-1 flex items-center justify-between">
-                    <span className="text-slate-500">Anlık Kod:</span>
-                    <button
-                      type="button"
-                      onClick={() => setOtpInput(twoFA.currentDemoCode)}
-                      className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-mono font-bold cursor-pointer"
-                    >
-                      {twoFA.currentDemoCode} (Seç)
-                    </button>
-                  </div>
-                </div>
+            <div>
+              <label className={labelCls}>Mevcut Şifreniz</label>
+              <div className="relative">
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  required
+                  placeholder="Mevcut şifrenizi girin"
+                  autoComplete="current-password"
+                  value={pwdForm.currentPassword}
+                  onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })}
+                  className={`${inputCls} pr-9`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent((v) => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  {showCurrent ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-                {!twoFA.enabled ? (
-                  <form onSubmit={handleEnable2FA} className="flex gap-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      required
-                      placeholder="6 haneli kod"
-                      value={otpInput}
-                      onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                      className={`${inputCls} font-mono text-center`}
-                    />
-                    <button type="submit" disabled={busyAction} className={`${primaryBtn} px-4 py-2 text-xs whitespace-nowrap`}>
-                      Aktifleştir
-                    </button>
-                  </form>
-                ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Yeni Güçlü Şifre</label>
+                <div className="relative">
+                  <input
+                    type={showNew ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    placeholder="Örn: Serhendi!2026"
+                    autoComplete="new-password"
+                    value={pwdForm.newPassword}
+                    onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
+                    className={`${inputCls} pr-9`}
+                  />
                   <button
                     type="button"
-                    disabled={busyAction}
-                    onClick={handleDisable2FA}
-                    className="w-full py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                    onClick={() => setShowNew((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                   >
-                    2FA Korumasını Kapat
+                    {showNew ? <IconEyeOff className="w-4 h-4" /> : <IconEye className="w-4 h-4" />}
                   </button>
-                )}
+                </div>
               </div>
-            )}
-          </div>
-
-          {/* BÜTÜNLÜK İMZASI & SSRF BAĞLANTI KONTROLÜ */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-            <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-900">Bütünlük & Bağlantı Kontrolü</h3>
-              {isAdmin && (
-                <button
-                  type="button"
-                  disabled={busyAction}
-                  onClick={() => handleVerifyIntegrity(true)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
-                >
-                  İmzaları Doğrula
-                </button>
-              )}
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between">
-              <span className="text-slate-600">HMAC-SHA256 Hareket İmzaları:</span>
-              <span className="font-bold text-[#0f6b36]">
-                {overview?.integrity?.verified || 0}/{overview?.integrity?.total || 0} Doğrulandı
-              </span>
-            </div>
-
-            <form onSubmit={handleCheckUrl} className="space-y-2 text-xs">
-              <label className={labelCls}>SSRF Bağlantı Testi (Beyaz Liste)</label>
-              <div className="flex gap-1.5">
+              <div>
+                <label className={labelCls}>Yeni Şifre Tekrar</label>
                 <input
-                  type="text"
-                  placeholder="https://belge.serhendi.org.tr/..."
-                  value={urlToCheck}
-                  onChange={(e) => setUrlToCheck(e.target.value)}
+                  type={showNew ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  placeholder="Yeni şifreyi tekrar girin"
+                  autoComplete="new-password"
+                  value={pwdForm.confirmPassword}
+                  onChange={(e) => setPwdForm({ ...pwdForm, confirmPassword: e.target.value })}
                   className={inputCls}
                 />
-                <button type="submit" disabled={busyAction} className="px-3 py-2 rounded-xl bg-slate-800 text-white font-semibold cursor-pointer">
-                  Test
-                </button>
               </div>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={(e) => handleCheckUrl(e, 'http://localhost/ayarlar')}
-                  className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] cursor-pointer"
-                >
-                  localhost dene
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleCheckUrl(e, 'https://belge.serhendi.org.tr/dekont.pdf')}
-                  className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] cursor-pointer"
-                >
-                  güvenli URL dene
-                </button>
-              </div>
-              {urlResult && (
-                <div
-                  className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 ${
-                    urlResult.ok ? 'bg-emerald-50 border-emerald-200 text-[#0f6b36]' : 'bg-rose-50 border-rose-200 text-rose-700'
-                  }`}
-                >
-                  {urlResult.ok ? <IconCheck className="w-3.5 h-3.5 shrink-0" /> : <IconX className="w-3.5 h-3.5 shrink-0" />}
-                  <span className="truncate">{urlResult.message}</span>
-                </div>
-              )}
-            </form>
-          </div>
+            </div>
+
+            <button type="submit" disabled={busyAction} className={`${primaryBtn} w-full py-2.5 text-xs sm:text-sm`}>
+              {busyAction ? 'Şifre Güncelleniyor...' : 'Şifremi Güncelle ve Kaydet'}
+            </button>
+          </form>
         </div>
       )}
 

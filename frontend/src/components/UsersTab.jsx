@@ -258,10 +258,7 @@ export default function UsersTab({
                       )}
                     </div>
                   )}
-                  <div className="text-xs text-slate-500 mt-0.5">
-                    @{u.username}
-                    {u.twoFactorEnabled && <span className="ml-2 text-emerald-700 font-semibold">• 2FA Açık</span>}
-                  </div>
+                  <div className="text-xs text-slate-500 mt-0.5">@{u.username}</div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
