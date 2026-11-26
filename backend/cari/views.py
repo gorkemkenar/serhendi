@@ -529,18 +529,20 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
-        if user.is_super_admin_role or user.pk == request.user.pk:
-            return Response({'detail': 'Baş Yönetici (admin) veya kendi hesabınız silinemez.'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.is_owner_role or user.pk == request.user.pk:
+            return Response({'detail': 'Sistem Sahibi (Owner) veya kendi hesabınız silinemez.'}, status=status.HTTP_400_BAD_REQUEST)
+        if user.effective_role == User.Role.SUPER_ADMIN and not request.user.is_owner_role:
+            return Response({'detail': 'Baş Yönetici (admin) hesabını yalnızca Sistem Sahibi (Owner) kontrol edebilir.'}, status=status.HTTP_403_FORBIDDEN)
         if not request.user.can_manage_user(user):
             log_security_event(
                 action='HIERARCHY_VIOLATION_BLOCKED',
                 severity='WARNING',
                 request=request,
                 user=request.user,
-                description=f'Rol Hiyerarşisi engeli: @{request.user.username}, yönetici @{user.username} hesabını silmeye çalıştı.',
+                description=f'Rol Hiyerarşisi engeli: @{request.user.username}, @{user.username} hesabını silmeye çalıştı.',
             )
             return Response(
-                {'detail': 'Rol Hiyerarşisi: Yönetici hesaplarını yalnızca Baş Yönetici (admin) silebilir.'},
+                {'detail': 'Rol Hiyerarşisi: Bu hesabı silme yetkiniz bulunmuyor.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
         uname = user.username
@@ -559,6 +561,16 @@ class UserViewSet(viewsets.ModelViewSet):
         """Hesaba rol ve (Birim Gözlemcisi ise) cari/birim atama uç noktası."""
         target = self.get_object()
         actor = request.user
+        if target.is_owner_role:
+            return Response(
+                {'detail': 'Sistem Sahibi (Owner) hesabının rolü değiştirilemez ve kimse tarafından kısıtlanamaz.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if target.effective_role == User.Role.SUPER_ADMIN and not actor.is_owner_role:
+            return Response(
+                {'detail': 'Baş Yönetici (admin) hesabının rolünü yalnızca Sistem Sahibi (Owner) değiştirebilir.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if not actor.can_manage_user(target):
             log_security_event(
                 action='HIERARCHY_VIOLATION_BLOCKED',
@@ -568,18 +580,13 @@ class UserViewSet(viewsets.ModelViewSet):
                 description=f'Rol Hiyerarşisi engeli: @{actor.username}, @{target.username} hesabının rolünü değiştirmeye çalıştı.',
             )
             return Response(
-                {'detail': 'Rol Hiyerarşisi: Yönetici hesaplarını yalnızca Baş Yönetici (admin) kontrol edebilir.'},
+                {'detail': 'Rol Hiyerarşisi: Yönetici hesaplarını yalnızca Sistem Sahibi (Owner) veya Baş Yönetici (admin) kontrol edebilir.'},
                 status=status.HTTP_403_FORBIDDEN,
-            )
-        if target.is_super_admin_role:
-            return Response(
-                {'detail': 'Baş Yönetici (admin) hesabının rolü değiştirilemez.'},
-                status=status.HTTP_400_BAD_REQUEST,
             )
 
         new_role = (request.data.get('role') or '').strip()
         unit_id = request.data.get('unitId')
-        if new_role not in (User.Role.ADMIN, User.Role.VIEWER_ALL, User.Role.VIEWER_UNIT):
+        if new_role not in (User.Role.SUPER_ADMIN, User.Role.ADMIN, User.Role.VIEWER_ALL, User.Role.VIEWER_UNIT):
             return Response({'detail': 'Geçersiz rol seçimi.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not actor.can_assign_role(new_role):
@@ -591,7 +598,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 description=f'Rol Hiyerarşisi engeli: @{actor.username} ({actor.effective_role}), @{target.username} hesabına "{new_role}" rolü atamaya çalıştı.',
             )
             return Response(
-                {'detail': 'Rol Hiyerarşisi: Yönetici rolünü yalnızca Baş Yönetici (admin) atayabilir.'},
+                {'detail': 'Rol Hiyerarşisi: Bu rolü yalnızca üst yetkili (Owner / Baş Yönetici) atayabilir.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -604,8 +611,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         old_role = target.effective_role
         target.role = new_role
-        target.is_staff = new_role == User.Role.ADMIN
-        target.save(update_fields=['role', 'unit', 'is_staff'])
+        target.is_superuser = new_role == User.Role.SUPER_ADMIN
+        target.is_staff = new_role in (User.Role.SUPER_ADMIN, User.Role.ADMIN)
+        target.save(update_fields=['role', 'unit', 'is_staff', 'is_superuser'])
         log_security_event(
             action='ROLE_ASSIGNED',
             severity='INFO',

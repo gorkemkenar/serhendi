@@ -65,7 +65,8 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+  const isAdmin =
+    currentUser?.role === 'owner' || currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
   const isUnitObserver = currentUser?.role === 'viewer_unit';
 
   const notify = useCallback((text, tone = 'success') => {
@@ -113,7 +114,9 @@ export default function App() {
         setUnits(unitList);
         setUnitItems(itemList);
         setTransactions(txList);
-        setUsers(user.role === 'admin' || user.role === 'super_admin' ? await api.users.list() : []);
+        setUsers(
+          user.role === 'owner' || user.role === 'admin' || user.role === 'super_admin' ? await api.users.list() : []
+        );
       } catch (err) {
         handleError(err);
       } finally {

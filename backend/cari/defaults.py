@@ -64,9 +64,10 @@ DEFAULT_TRANSACTIONS = [
     ('HRK-1013', '2026-11-21', 'BRM-08', 'KLM-0122', 'Kumanya', 'Havale / EFT', 'Silivri il heyeti Kumanya Kısmi Tahsilat Ödemesi', 0, 150000),
 ]
 
-# Rol Hiyerarşisi (Seviye 4 -> Seviye 1) ve Güçlü Şifreli Deneme Hesapları:
+# Rol Hiyerarşisi (Seviye 5 Owner -> Seviye 1) ve Güçlü Şifreli Hesaplar:
 # (ad, kullanıcı adı, güçlü şifre, rol, birim)
 DEFAULT_USERS = [
+    ('Görkem Kenar (Sistem Sahibi)', 'gorkem', 'Serhendi!Owner#2026', 'owner', None),
     (ADMIN_NAME, 'admin', 'Serhendi!Admin26', 'super_admin', None),
     ('Cari İşlemler Yöneticisi', 'yonetici', 'Serhendi!Ynt26', 'admin', None),
     ('Genel Merkez Gözlemci', 'genel', 'Serhendi!Gnl26', 'viewer_all', None),
@@ -148,8 +149,8 @@ def load_defaults(force_reset: bool = False):
             user.role = role
             user.unit_id = unit_id if Unit.objects.filter(pk=unit_id).exists() else None
             user.is_active = True
-            user.is_staff = role in ('super_admin', 'admin')
-            user.is_superuser = role == 'super_admin'
+            user.is_staff = role in ('owner', 'super_admin', 'admin')
+            user.is_superuser = role in ('owner', 'super_admin')
             user.failed_login_attempts = 0
             user.locked_until = None
             user.must_change_password = password.lower() in WEAK_PASSWORDS or len(password) < 8

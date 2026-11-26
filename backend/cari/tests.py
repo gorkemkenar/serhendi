@@ -235,6 +235,31 @@ class OwaspTop10SecurityTests(TestCase):
         )
         self.assertEqual(ynt_pwd.status_code, 200)
 
+        # Baş Yönetici (admin), Sistem Sahibi (gorkem / owner) hesabının şifresini değiştiremez veya silemez (403)
+        owner_user = User.objects.get(username='gorkem')
+        owner_pwd_forbidden = self.client.post(
+            f'/api/users/{owner_user.id}/set-password/',
+            {'password': 'HackOwner2026!'},
+            format='json',
+        )
+        self.assertEqual(owner_pwd_forbidden.status_code, 403)
+
+        # Sistem Sahibi (gorkem / owner) ise Baş Yöneticiyi (admin) kontrol edebilir
+        res_owner = self.client.post(
+            '/api/auth/login/',
+            {'username': 'gorkem', 'password': 'Serhendi!Owner#2026'},
+            format='json',
+        )
+        self.assertEqual(res_owner.status_code, 200)
+        self.assertEqual(res_owner.data['user']['role'], 'owner')
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {res_owner.data['token']}")
+        adm_pwd_by_owner = self.client.post(
+            f'/api/users/{admin_user.id}/set-password/',
+            {'password': 'Serhendi!Admin26'},
+            format='json',
+        )
+        self.assertEqual(adm_pwd_by_owner.status_code, 200)
+
     def test_13_unit_items_crud_and_remaining_calculation(self):
         """Cari içindeki kalemler (Kumanya, Kandil Simidi, Patates -> Borç / Ödenen / Kalan) eklenip silinebilir."""
         res = self.client.post('/api/auth/login/', {'username': 'admin', 'password': 'Serhendi!Admin26'}, format='json')

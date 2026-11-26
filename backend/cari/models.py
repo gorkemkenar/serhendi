@@ -53,12 +53,14 @@ class Unit(models.Model):
 
 class User(AbstractUser):
     class Role(models.TextChoices):
+        OWNER = 'owner', 'Sistem Sahibi (Owner)'
         SUPER_ADMIN = 'super_admin', 'Baş Yönetici (Admin)'
         ADMIN = 'admin', 'Yönetici'
         VIEWER_ALL = 'viewer_all', 'Genel Gözlemci (Salt Okunur)'
         VIEWER_UNIT = 'viewer_unit', 'Birim Gözlemcisi (Kısıtlı)'
 
     ROLE_RANK = {
+        Role.OWNER: 5,
         Role.SUPER_ADMIN: 4,
         Role.ADMIN: 3,
         Role.VIEWER_ALL: 2,
@@ -88,40 +90,68 @@ class User(AbstractUser):
 
     @property
     def effective_role(self):
+        if self.role == self.Role.OWNER:
+            return self.Role.OWNER
         if self.is_superuser or self.role == self.Role.SUPER_ADMIN:
             return self.Role.SUPER_ADMIN
         return self.role
 
     @property
+    def is_owner_role(self):
+        return self.effective_role == self.Role.OWNER
+
+    @property
     def is_super_admin_role(self):
-        return self.effective_role == self.Role.SUPER_ADMIN
+        return self.effective_role in (self.Role.OWNER, self.Role.SUPER_ADMIN)
 
     @property
     def is_admin_role(self):
-        return self.effective_role in (self.Role.SUPER_ADMIN, self.Role.ADMIN)
+        return self.effective_role in (self.Role.OWNER, self.Role.SUPER_ADMIN, self.Role.ADMIN)
 
     @property
     def role_rank(self) -> int:
         return self.ROLE_RANK.get(self.effective_role, 0)
 
     def can_manage_user(self, target_user) -> bool:
-        """Rol Hiyerarşisi:
-        - Baş Yönetici (super_admin / admin) yöneticileri ve tüm alt rolleri kontrol edebilir.
-        - Yönetici (admin) yalnızca Genel Gözlemci ve Birim Gözlemcisi hesaplarını kontrol edebilir;
-          Baş Yöneticiyi veya başka bir Yöneticiyi düzenleyemez/silemez.
+        """5 Kademeli Rol Hiyerarşisi:
+        - Sistem Sahibi (Owner - Seviye 5): Baş Yönetici (Admin), Yönetici ve tüm gözlemcileri kontrol edebilir.
+          Kimse (Admin dahil) Owner hesabını değiştiremez, şifresini sıfırlayamaz veya silemez.
+        - Baş Yönetici (Admin - Seviye 4): Yöneticileri (Seviye 3) ve gözlemcileri (Seviye 2 & 1) kontrol edebilir;
+          fakat Owner hesabına müdahale edemez.
+        - Yönetici (Seviye 3): Yalnızca Genel Gözlemci ve Birim Gözlemcisi hesaplarını kontrol edebilir.
         """
         if not self.is_admin_role:
             return False
-        if self.is_super_admin_role:
+        if target_user.is_owner_role:
+            return self.pk == target_user.pk and self.is_owner_role
+        if self.is_owner_role:
             return True
+        if self.effective_role == self.Role.SUPER_ADMIN:
+            return target_user.effective_role in (
+                self.Role.SUPER_ADMIN,
+                self.Role.ADMIN,
+                self.Role.VIEWER_ALL,
+                self.Role.VIEWER_UNIT,
+            )
         return target_user.effective_role in (self.Role.VIEWER_ALL, self.Role.VIEWER_UNIT)
 
     def can_assign_role(self, target_role: str) -> bool:
-        """Baş Yönetici yönetici dahil tüm rolleri atayabilir; Yönetici yalnızca gözlemci rollerini atayabilir."""
+        """
+        - Sistem Sahibi (Owner): Baş Yönetici (super_admin), Yönetici (admin) ve tüm gözlemci rollerini atayabilir.
+        - Baş Yönetici (Admin): Yönetici (admin) ve gözlemci rollerini atayabilir.
+        - Yönetici: Yalnızca gözlemci rollerini atayabilir.
+        """
         if not self.is_admin_role:
             return False
-        if self.is_super_admin_role:
-            return target_role in (self.Role.SUPER_ADMIN, self.Role.ADMIN, self.Role.VIEWER_ALL, self.Role.VIEWER_UNIT)
+        if self.is_owner_role:
+            return target_role in (
+                self.Role.SUPER_ADMIN,
+                self.Role.ADMIN,
+                self.Role.VIEWER_ALL,
+                self.Role.VIEWER_UNIT,
+            )
+        if self.effective_role == self.Role.SUPER_ADMIN:
+            return target_role in (self.Role.ADMIN, self.Role.VIEWER_ALL, self.Role.VIEWER_UNIT)
         return target_role in (self.Role.VIEWER_ALL, self.Role.VIEWER_UNIT)
 
     @property

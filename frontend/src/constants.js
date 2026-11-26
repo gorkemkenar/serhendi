@@ -11,11 +11,19 @@ export const TRANSACTION_TYPES = [
 
 export const ROLE_HIERARCHY = [
   {
+    key: 'owner',
+    rank: 5,
+    label: 'Seviye 5 • Sistem Sahibi (Owner)',
+    short: 'Sistem Sahibi (Owner)',
+    desc: 'Sistemin en üst sahibi. Baş Yönetici (Admin), Yönetici ve tüm gözlemcileri kontrol eder; kimse tarafından değiştirilemez veya silinemez.',
+    cls: 'bg-slate-900 text-amber-300 border-slate-800'
+  },
+  {
     key: 'super_admin',
     rank: 4,
     label: 'Seviye 4 • Baş Yönetici (Admin)',
     short: 'Baş Yönetici',
-    desc: 'Tam sistem yetkisi. Yöneticileri ve gözlemcileri atayabilir ve kontrol edebilir.',
+    desc: 'Tam sistem yetkisi. Yöneticileri ve gözlemcileri atayabilir ve kontrol edebilir (Owner hesabına dokunamaz).',
     cls: 'bg-slate-800 text-white border-slate-700'
   },
   {
@@ -23,7 +31,7 @@ export const ROLE_HIERARCHY = [
     rank: 3,
     label: 'Seviye 3 • Yönetici',
     short: 'Yönetici',
-    desc: 'Carileri yönetir, gözlemcilere rol/birim atar. Sadece Baş Yönetici kontrol edebilir.',
+    desc: 'Carileri yönetir, gözlemcilere rol/birim atar. Sadece Owner ve Baş Yönetici kontrol edebilir.',
     cls: 'bg-emerald-50 text-[#0f6b36] border-emerald-200'
   },
   {
@@ -58,6 +66,15 @@ export const todayISO = () => {
 };
 
 export const getRoleBadge = (role) => {
+  if (role === 'owner') {
+    return {
+      label: 'Sistem Sahibi (Owner)',
+      short: 'Owner (Sistem Sahibi)',
+      rank: 5,
+      cls: 'bg-slate-900 text-amber-300 border-slate-800',
+      Icon: IconShield
+    };
+  }
   if (role === 'super_admin') {
     return {
       label: 'Baş Yönetici (Admin)',

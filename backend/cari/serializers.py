@@ -189,6 +189,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 class MeSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='display_name', read_only=True)
     role = serializers.CharField(source='effective_role', read_only=True)
+    isOwner = serializers.BooleanField(source='is_owner_role', read_only=True)
     isSuperAdmin = serializers.BooleanField(source='is_super_admin_role', read_only=True)
     roleRank = serializers.IntegerField(source='role_rank', read_only=True)
     unitId = serializers.CharField(source='unit_id', read_only=True, allow_null=True)
@@ -202,6 +203,7 @@ class MeSerializer(serializers.ModelSerializer):
             'name',
             'username',
             'role',
+            'isOwner',
             'isSuperAdmin',
             'roleRank',
             'unitId',
@@ -218,6 +220,7 @@ class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8, max_length=128)
     role = serializers.ChoiceField(choices=User.Role.choices, required=False)
     isProtected = serializers.SerializerMethodField()
+    isOwner = serializers.BooleanField(source='is_owner_role', read_only=True)
     isSuperAdmin = serializers.BooleanField(source='is_super_admin_role', read_only=True)
     roleRank = serializers.IntegerField(source='role_rank', read_only=True)
     canManage = serializers.SerializerMethodField()
@@ -234,6 +237,7 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'role',
             'roleRank',
+            'isOwner',
             'isSuperAdmin',
             'canManage',
             'unitId',
@@ -247,6 +251,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'roleRank',
+            'isOwner',
             'isSuperAdmin',
             'canManage',
             'isLocked',
@@ -256,7 +261,7 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
     def get_isProtected(self, obj):
-        return obj.is_super_admin_role
+        return obj.is_owner_role or obj.is_super_admin_role
 
     def get_canManage(self, obj):
         request = self.context.get('request')
@@ -298,16 +303,16 @@ class UserSerializer(serializers.ModelSerializer):
         if actor and actor.is_authenticated:
             if self.instance is not None and not actor.can_manage_user(self.instance):
                 raise serializers.ValidationError(
-                    {'role': 'Rol Hiyerarşisi: Yönetici hesaplarını yalnızca Baş Yönetici (admin) kontrol edebilir.'}
+                    {'role': 'Rol Hiyerarşisi: Bu hesabı yalnızca üst yetkili (Owner / Baş Yönetici) kontrol edebilir.'}
                 )
             if 'role' in attrs or self.instance is None:
-                if self.instance is not None and self.instance.is_super_admin_role and role != User.Role.SUPER_ADMIN:
-                    raise serializers.ValidationError({'role': 'Baş Yönetici (admin) rolü düşürülemez.'})
-                if role == User.Role.SUPER_ADMIN and (self.instance is None or not self.instance.is_super_admin_role):
-                    raise serializers.ValidationError({'role': 'Sistemde yeni Baş Yönetici oluşturulamaz; Yönetici rolünü seçin.'})
+                if self.instance is not None and self.instance.is_owner_role and role != User.Role.OWNER:
+                    raise serializers.ValidationError({'role': 'Sistem Sahibi (Owner) rolü değiştirilemez.'})
+                if role == User.Role.OWNER and (self.instance is None or not self.instance.is_owner_role):
+                    raise serializers.ValidationError({'role': 'Sistem Sahibi (Owner) rolü başka bir hesaba atanamaz.'})
                 if not actor.can_assign_role(role):
                     raise serializers.ValidationError(
-                        {'role': 'Rol Hiyerarşisi: Yönetici rolünü yalnızca Baş Yönetici (admin) atayabilir.'}
+                        {'role': 'Rol Hiyerarşisi: Bu rolü atama yetkiniz bulunmuyor.'}
                     )
 
         if role == User.Role.VIEWER_UNIT and unit is None:
@@ -325,8 +330,8 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         password = validated_data.pop('password').strip()
         user = User(**validated_data)
-        user.is_staff = user.role in (User.Role.SUPER_ADMIN, User.Role.ADMIN)
-        user.is_superuser = user.role == User.Role.SUPER_ADMIN
+        user.is_staff = user.role in (User.Role.OWNER, User.Role.SUPER_ADMIN, User.Role.ADMIN)
+        user.is_superuser = user.role in (User.Role.OWNER, User.Role.SUPER_ADMIN)
         user.must_change_password = False
         user.set_password(password)
         user.save()
@@ -336,9 +341,10 @@ class UserSerializer(serializers.ModelSerializer):
         password = (validated_data.pop('password', '') or '').strip()
         for key, val in validated_data.items():
             setattr(instance, key, val)
-        if instance.is_superuser:
-            instance.role = User.Role.SUPER_ADMIN
-        instance.is_staff = instance.is_superuser or instance.role in (User.Role.SUPER_ADMIN, User.Role.ADMIN)
+        if instance.is_owner_role:
+            instance.role = User.Role.OWNER
+        instance.is_superuser = instance.role in (User.Role.OWNER, User.Role.SUPER_ADMIN)
+        instance.is_staff = instance.is_superuser or instance.role in (User.Role.OWNER, User.Role.SUPER_ADMIN, User.Role.ADMIN)
         if password:
             instance.set_password(password)
             instance.must_change_password = False

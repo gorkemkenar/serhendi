@@ -14,7 +14,8 @@ export default function UsersTab({
   onDeleteUser,
   onResetDefaults
 }) {
-  const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.isSuperAdmin;
+  const isOwner = currentUser?.role === 'owner' || currentUser?.isOwner;
+  const isSuperAdmin = isOwner || currentUser?.role === 'super_admin' || currentUser?.isSuperAdmin;
   const currentUserId = currentUser?.id;
 
   const emptyForm = { name: '', username: '', password: '', role: 'viewer_all', unitId: units[0]?.id || '' };
@@ -100,9 +101,11 @@ export default function UsersTab({
           <div>
             <h2 className="text-sm sm:text-base font-bold text-slate-900">Kullanıcı, Rol & Şifre Yönetimi</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {isSuperAdmin
-                ? 'Baş Yönetici (Admin): Yöneticiler ve gözlemciler dahil tüm hesaplara rol ve şifre atayabilirsiniz.'
-                : 'Yönetici: Gözlemci hesaplarına rol, birim ve şifre atayabilirsiniz (Yöneticileri yalnızca Admin kontrol eder).'}
+              {isOwner
+                ? 'Sistem Sahibi (Owner): Baş Yönetici (Admin), Yönetici ve gözlemciler dahil tüm sistemi kontrol edebilirsiniz.'
+                : isSuperAdmin
+                  ? 'Baş Yönetici (Admin): Yöneticiler ve gözlemciler dahil hesaplara rol ve şifre atayabilirsiniz (Owner hesabına dokunulamaz).'
+                  : 'Yönetici: Gözlemci hesaplarına rol, birim ve şifre atayabilirsiniz (Yöneticileri yalnızca Owner ve Admin kontrol eder).'}
             </p>
           </div>
         </div>
@@ -173,6 +176,7 @@ export default function UsersTab({
                 <option value="viewer_all">Genel Gözlemci (Tüm Birimler)</option>
                 <option value="viewer_unit">Birim Gözlemcisi (Tek Birim)</option>
                 {isSuperAdmin && <option value="admin">Yönetici</option>}
+                {isOwner && <option value="super_admin">Baş Yönetici (Admin)</option>}
               </select>
             </div>
           </div>
@@ -210,7 +214,7 @@ export default function UsersTab({
           const shown = !!visible[u.id];
           const draft = drafts[u.id] ?? '';
           const canManageThis = Boolean(u.canManage);
-          const canEditRole = canManageThis && !u.isSuperAdmin;
+          const canEditRole = canManageThis && !u.isOwner && (isOwner || !u.isSuperAdmin);
           const rDraft = getRoleDraft(u);
           const roleChanged =
             rDraft.role !== u.role || (rDraft.role === 'viewer_unit' && String(rDraft.unitId || '') !== String(u.unitId || ''));
@@ -265,7 +269,7 @@ export default function UsersTab({
                     <RoleIcon className="w-3.5 h-3.5" />
                     {rm.short}
                   </span>
-                  {canManageThis && !u.isSuperAdmin && u.id !== currentUserId && (
+                  {canManageThis && !u.isOwner && (isOwner || !u.isSuperAdmin) && u.id !== currentUserId && (
                     <button
                       type="button"
                       onClick={() => onDeleteUser(u)}
@@ -297,6 +301,7 @@ export default function UsersTab({
                       <option value="viewer_all">Genel Gözlemci (Tümü)</option>
                       <option value="viewer_unit">Birim Gözlemcisi (Tek Birim)</option>
                       {isSuperAdmin && <option value="admin">Yönetici</option>}
+                      {isOwner && <option value="super_admin">Baş Yönetici (Admin)</option>}
                     </select>
 
                     {rDraft.role === 'viewer_unit' ? (
@@ -339,7 +344,11 @@ export default function UsersTab({
                 <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 flex items-center justify-between">
                   <span>Kapsam: {assigned ? assigned.name : 'Tüm Birimler'}</span>
                   <span className="font-semibold text-slate-600">
-                    {u.isSuperAdmin ? 'Tam Sistem Yetkisi' : 'Sadece Admin Kontrol Eder'}
+                    {u.isOwner
+                      ? 'Sistem Sahibi (Dokunulmaz)'
+                      : u.isSuperAdmin
+                        ? 'Sadece Owner Kontrol Eder'
+                        : 'Sadece Owner & Admin Kontrol Eder'}
                   </span>
                 </div>
               )}
