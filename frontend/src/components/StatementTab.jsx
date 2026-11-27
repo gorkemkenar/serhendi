@@ -473,7 +473,10 @@ export default function StatementTab({
                             <span className="text-slate-400">•</span>
                             <span className="font-semibold text-slate-700">{r.type}</span>
                           </div>
-                          <span className="text-[11px] text-slate-400 shrink-0">{r.date}</span>
+                          <span className="text-[11px] text-slate-400 shrink-0">
+                            {r.date}
+                            {r.time && <span className="ml-1 text-[10px] text-slate-400/90 font-normal tabular-nums">{r.time}</span>}
+                          </span>
                         </div>
                         <div className="text-slate-700">{r.description}</div>
                         <div className="flex items-center justify-between pt-1 text-[11px] tabular-nums">
@@ -506,7 +509,10 @@ export default function StatementTab({
                     <tbody>
                       {report.rows.map((r) => (
                         <tr key={r.id}>
-                          <td className="py-2 px-3 border border-slate-200 whitespace-nowrap">{r.date}</td>
+                          <td className="py-2 px-3 border border-slate-200 whitespace-nowrap">
+                            <span>{r.date}</span>
+                            {r.time && <span className="ml-1.5 text-[10px] text-slate-400 font-normal tabular-nums">{r.time}</span>}
+                          </td>
                           <td className="py-2 px-3 border border-slate-200 whitespace-nowrap font-bold text-[#0f6b36]">
                             {r.itemName || r.category || 'Genel'}
                           </td>

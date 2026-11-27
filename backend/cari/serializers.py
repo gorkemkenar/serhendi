@@ -89,6 +89,8 @@ class TransactionSerializer(serializers.ModelSerializer):
     itemDescription = serializers.SerializerMethodField()
     category = serializers.CharField(required=False, allow_blank=True, default='Genel')
     createdBy = serializers.CharField(source='created_by', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
+    time = serializers.SerializerMethodField()
     documentUrl = serializers.CharField(source='document_url', required=False, allow_blank=True, default='')
     integrityHash = serializers.CharField(source='integrity_hash', read_only=True)
     integrityVerified = serializers.SerializerMethodField()
@@ -118,12 +120,14 @@ class TransactionSerializer(serializers.ModelSerializer):
             'debt',
             'credit',
             'createdBy',
+            'createdAt',
+            'time',
             'documentUrl',
             'integrityHash',
             'integrityVerified',
             'amount',
         ]
-        read_only_fields = ['id', 'unitName', 'itemName', 'itemDescription', 'integrityHash', 'integrityVerified']
+        read_only_fields = ['id', 'unitName', 'itemName', 'itemDescription', 'createdAt', 'time', 'integrityHash', 'integrityVerified']
         extra_kwargs = {
             'debt': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
             'credit': {'required': False, 'min_value': Decimal('0'), 'max_value': Decimal('50000000.00')},
@@ -144,6 +148,11 @@ class TransactionSerializer(serializers.ModelSerializer):
         if obj.item_id and obj.item:
             return obj.item.description or ''
         return ''
+
+    def get_time(self, obj):
+        if not obj.created_at:
+            return ''
+        return timezone.localtime(obj.created_at).strftime('%H:%M')
 
     def get_integrityVerified(self, obj):
         expected = compute_transaction_hash(obj, obj.prev_hash or 'GENESIS')

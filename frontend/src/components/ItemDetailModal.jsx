@@ -188,7 +188,10 @@ export default function ItemDetailModal({
                             >
                               {tx.type}
                             </span>
-                            <span className="text-[11px] text-slate-400">{tx.date}</span>
+                            <span className="text-[11px] text-slate-400">
+                              {tx.date}
+                              {tx.time && <span className="ml-1 text-[10px] text-slate-400/90 font-normal tabular-nums">{tx.time}</span>}
+                            </span>
                           </div>
                           <div className="text-slate-800 font-medium truncate">{tx.description}</div>
                         </div>
