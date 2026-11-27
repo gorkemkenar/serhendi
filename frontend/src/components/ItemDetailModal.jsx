@@ -21,13 +21,14 @@ export default function ItemDetailModal({
   const paid = Number(item.paid) || 0;
   const remaining = debt - paid;
 
+  const txNum = (id) => parseInt(String(id || '').replace(/\D+/g, ''), 10) || 0;
   const itemTxs = transactions
     .filter(
       (t) =>
         t.unitId === item.unitId &&
         (t.itemId === item.id || (t.category && t.category.toLowerCase() === item.name.toLowerCase()))
     )
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id)));
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : txNum(a.id) - txNum(b.id) || String(a.id).localeCompare(String(b.id))));
 
   const startEditTx = (tx) => {
     if (!isAdmin) return;

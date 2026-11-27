@@ -27,8 +27,9 @@ import UnitModal from './components/UnitModal.jsx';
 import ItemDetailModal from './components/ItemDetailModal.jsx';
 import InstallModal from './components/InstallModal.jsx';
 
-const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id.localeCompare(a.id));
-const byDateAsc = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id.localeCompare(b.id));
+const txNum = (id) => parseInt(String(id || '').replace(/\D+/g, ''), 10) || 0;
+const byDateDesc = (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : txNum(b.id) - txNum(a.id) || String(b.id).localeCompare(String(a.id)));
+const byDateAsc = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : txNum(a.id) - txNum(b.id) || String(a.id).localeCompare(String(b.id)));
 
 // 3. Enjeksiyon Koruması: Excel/CSV formül enjeksiyonunu (=, +, -, @) istemci tarafında da etkisizleştirir
 const safeCsvCell = (val) => {
@@ -309,7 +310,7 @@ export default function App() {
         }
         return true;
       })
-      .sort(byDateDesc);
+      .sort(byDateAsc);
   }, [yearTransactions, unitFilter, itemFilter, typeFilter, searchQuery, units]);
 
   const statementReport = useMemo(() => {
@@ -505,7 +506,7 @@ export default function App() {
         documentUrl: form.documentUrl || '',
         amount: amt.toFixed(2)
       });
-      setTransactions((prev) => [created, ...prev]);
+      setTransactions((prev) => [...prev, created]);
       // Kalem toplamları sunucuda güncellendiği için kalem listesini tazele
       const freshItems = await api.unitItems.list().catch(() => null);
       if (freshItems) setUnitItems(freshItems);
