@@ -58,7 +58,7 @@ export default function ItemDetailModal({
 
   return (
     <Modal
-      title={`${item.name} — Hareketler`}
+      title={`${item.name}${item.description ? ` (${item.description})` : ''} — Hareketler`}
       icon={<IconFileText />}
       onClose={onClose}
       maxWidth="max-w-2xl"

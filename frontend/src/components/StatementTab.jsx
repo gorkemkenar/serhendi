@@ -146,6 +146,13 @@ export default function StatementTab({
                               onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
                               className="w-full px-2.5 py-1.5 text-xs font-bold border border-[#0f6b36] rounded-lg bg-white"
                             />
+                            <input
+                              type="text"
+                              placeholder="Açıklama (Örn: 10 Çuval)"
+                              value={editItem.description || ''}
+                              onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
+                              className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                            />
                             <div className="grid grid-cols-2 gap-2">
                               <input
                                 type="number"
@@ -186,12 +193,17 @@ export default function StatementTab({
                         ) : (
                           <>
                             <div className="flex items-center justify-between gap-2">
-                              <span
+                              <div
                                 onClick={() => onSelectItem?.(item, report.unit)}
-                                className="font-extrabold text-sm text-slate-900 cursor-pointer"
+                                className="flex items-center gap-1.5 cursor-pointer"
                               >
-                                {item.name}
-                              </span>
+                                <span className="font-extrabold text-sm text-slate-900">{item.name}</span>
+                                {item.description && (
+                                  <span className="px-2 py-0.5 rounded-md bg-white text-slate-700 border border-slate-200 text-[11px] font-bold">
+                                    {item.description}
+                                  </span>
+                                )}
+                              </div>
                               {isAdmin && (
                                 <div className="no-print flex items-center gap-1">
                                   <button
@@ -267,18 +279,32 @@ export default function StatementTab({
                           <tr key={item.id} className="hover:bg-slate-50">
                             <td className="py-2.5 px-3.5 border border-slate-200 font-bold text-slate-900">
                               {isEditing ? (
-                                <input
-                                  type="text"
-                                  value={editItem.name}
-                                  onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
-                                  className="w-full px-2 py-1 text-xs border border-[#0f6b36] rounded bg-white"
-                                />
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  <input
+                                    type="text"
+                                    value={editItem.name}
+                                    onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
+                                    className="w-full px-2 py-1 text-xs border border-[#0f6b36] rounded bg-white"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Açıklama (Örn: 10 Çuval)"
+                                    value={editItem.description || ''}
+                                    onChange={(e) => setEditItem({ ...editItem, description: e.target.value })}
+                                    className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                                  />
+                                </div>
                               ) : (
                                 <div
                                   onClick={() => onSelectItem?.(item, report.unit)}
                                   className="flex items-center gap-1.5 cursor-pointer group"
                                 >
                                   <span className="group-hover:text-[#0f6b36] group-hover:underline">{item.name}</span>
+                                  {item.description && (
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold">
+                                      {item.description}
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </td>
@@ -378,15 +404,22 @@ export default function StatementTab({
             {isAdmin && (
               <form
                 onSubmit={handleAdd}
-                className="no-print p-2.5 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 items-center"
+                className="no-print p-2.5 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-2 items-center"
               >
                 <input
                   type="text"
                   required
-                  placeholder="Kalem Adı (Örn: Kumanya)"
+                  placeholder="Kalem Adı (Örn: Patates)"
                   value={newForm.name}
                   onChange={(e) => setNewForm({ ...newForm, name: e.target.value })}
-                  className="col-span-2 sm:col-span-1 w-full px-2.5 py-2 sm:py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  className="w-full px-2.5 py-2 sm:py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Açıklama (Örn: 10 Çuval)"
+                  value={newForm.description}
+                  onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
+                  className="w-full px-2.5 py-2 sm:py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                 />
                 <input
                   type="number"

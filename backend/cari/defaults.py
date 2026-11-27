@@ -17,38 +17,61 @@ DEFAULT_UNITS = [
     ('BRM-06', 'Gümüşyaka Dergah', 'İbrahim Yıldız', '0532 106 06 06'),
     ('BRM-07', 'Danamandıra Dergah', 'Ömer Aydın', '0532 107 07 07'),
     ('BRM-08', 'Silivri il heyeti', 'Yusuf Arslan', '0532 108 08 08'),
+    ('BRM-09', 'Nezir Dergah', 'Yetkili', '0532 109 09 09'),
 ]
 
 # Her cari / birim için kalem kalem borç listesi: (id, birim, kalem adı, kalem detayı, borç, ödenen)
+# 2026 SİLİVRİ PATATES verileri (Adet açıklamaya "X Çuval" şeklinde yazılmıştır, birim fiyat yazılmaz)
 DEFAULT_UNIT_ITEMS = [
     ('KLM-0101', 'BRM-01', 'Kumanya', '', 0, 0),
     ('KLM-0102', 'BRM-01', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0103', 'BRM-01', 'Patates', '', 0, 0),
+    ('KLM-0103', 'BRM-01', 'Patates', '23 Çuval', 41400, 26100),
     ('KLM-0104', 'BRM-02', 'Kumanya', '', 0, 0),
     ('KLM-0105', 'BRM-02', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0106', 'BRM-02', 'Patates', '', 0, 0),
+    ('KLM-0106', 'BRM-02', 'Patates', '18 Çuval', 32400, 32400),
     ('KLM-0107', 'BRM-03', 'Kumanya', '', 0, 0),
     ('KLM-0108', 'BRM-03', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0109', 'BRM-03', 'Patates', '', 0, 0),
+    ('KLM-0109', 'BRM-03', 'Patates', '9 Çuval', 16200, 16200),
     ('KLM-0110', 'BRM-04', 'Kumanya', '', 0, 0),
     ('KLM-0111', 'BRM-04', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0112', 'BRM-04', 'Patates', '', 0, 0),
+    ('KLM-0112', 'BRM-04', 'Patates', '8 Çuval', 14400, 14400),
     ('KLM-0113', 'BRM-05', 'Kumanya', '', 0, 0),
     ('KLM-0114', 'BRM-05', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0115', 'BRM-05', 'Patates', '', 0, 0),
+    ('KLM-0115', 'BRM-05', 'Patates', '10 Çuval', 18000, 14700),
     ('KLM-0116', 'BRM-06', 'Kumanya', '', 0, 0),
     ('KLM-0117', 'BRM-06', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0118', 'BRM-06', 'Patates', '', 0, 0),
+    ('KLM-0118', 'BRM-06', 'Patates', '25 Çuval', 45000, 45000),
     ('KLM-0119', 'BRM-07', 'Kumanya', '', 0, 0),
     ('KLM-0120', 'BRM-07', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0121', 'BRM-07', 'Patates', '', 0, 0),
+    ('KLM-0121', 'BRM-07', 'Patates', '9 Çuval', 16200, 16200),
     ('KLM-0122', 'BRM-08', 'Kumanya', '', 0, 0),
     ('KLM-0123', 'BRM-08', 'Kandil Simidi', '', 0, 0),
-    ('KLM-0124', 'BRM-08', 'Patates', '', 0, 0),
+    ('KLM-0124', 'BRM-08', 'Patates', '16 Çuval', 28800, 28800),
+    ('KLM-0125', 'BRM-09', 'Kumanya', '', 0, 0),
+    ('KLM-0126', 'BRM-09', 'Kandil Simidi', '', 0, 0),
+    ('KLM-0127', 'BRM-09', 'Patates', '2 Çuval', 3600, 0),
 ]
 
 # (id, tarih, birim, kalem_id, kalem_adı, tür, açıklama, borç, alacak)
-DEFAULT_TRANSACTIONS = []
+DEFAULT_TRANSACTIONS = [
+    ('HRK-1001', '2026-11-27', 'BRM-05', 'KLM-0115', 'Patates', 'Malzeme', '10 Çuval', 18000, 0),
+    ('HRK-1002', '2026-11-27', 'BRM-05', 'KLM-0115', 'Patates', 'Nakit Tahsilat', '10 Çuval', 0, 14700),
+    ('HRK-1003', '2026-11-27', 'BRM-04', 'KLM-0112', 'Patates', 'Malzeme', '8 Çuval', 14400, 0),
+    ('HRK-1004', '2026-11-27', 'BRM-04', 'KLM-0112', 'Patates', 'Nakit Tahsilat', '8 Çuval', 0, 14400),
+    ('HRK-1005', '2026-11-27', 'BRM-01', 'KLM-0103', 'Patates', 'Malzeme', '23 Çuval', 41400, 0),
+    ('HRK-1006', '2026-11-27', 'BRM-01', 'KLM-0103', 'Patates', 'Nakit Tahsilat', '23 Çuval', 0, 26100),
+    ('HRK-1007', '2026-11-27', 'BRM-06', 'KLM-0118', 'Patates', 'Malzeme', '25 Çuval', 45000, 0),
+    ('HRK-1008', '2026-11-27', 'BRM-06', 'KLM-0118', 'Patates', 'Nakit Tahsilat', '25 Çuval', 0, 45000),
+    ('HRK-1009', '2026-11-27', 'BRM-03', 'KLM-0109', 'Patates', 'Malzeme', '9 Çuval', 16200, 0),
+    ('HRK-1010', '2026-11-27', 'BRM-03', 'KLM-0109', 'Patates', 'Nakit Tahsilat', '9 Çuval', 0, 16200),
+    ('HRK-1011', '2026-11-27', 'BRM-02', 'KLM-0106', 'Patates', 'Malzeme', '18 Çuval', 32400, 0),
+    ('HRK-1012', '2026-11-27', 'BRM-02', 'KLM-0106', 'Patates', 'Nakit Tahsilat', '18 Çuval', 0, 32400),
+    ('HRK-1013', '2026-11-27', 'BRM-07', 'KLM-0121', 'Patates', 'Malzeme', '9 Çuval', 16200, 0),
+    ('HRK-1014', '2026-11-27', 'BRM-07', 'KLM-0121', 'Patates', 'Nakit Tahsilat', '9 Çuval', 0, 16200),
+    ('HRK-1015', '2026-11-27', 'BRM-09', 'KLM-0127', 'Patates', 'Malzeme', '2 Çuval', 3600, 0),
+    ('HRK-1016', '2026-11-27', 'BRM-08', 'KLM-0124', 'Patates', 'Malzeme', '16 Çuval', 28800, 0),
+    ('HRK-1017', '2026-11-27', 'BRM-08', 'KLM-0124', 'Patates', 'Nakit Tahsilat', '16 Çuval', 0, 28800),
+]
 
 # Rol Hiyerarşisi (Seviye 5 Owner -> Seviye 1) ve Güçlü Şifreli Hesaplar:
 # (ad, kullanıcı adı, güçlü şifre, rol, birim)
@@ -65,6 +88,7 @@ DEFAULT_USERS = [
     ('Gümüşyaka Dergah Gözlemci', 'gumusyaka', 'Serhendi!Gms06', 'viewer_unit', 'BRM-06'),
     ('Danamandıra Dergah Gözlemci', 'danamandira', 'Serhendi!Dnm07', 'viewer_unit', 'BRM-07'),
     ('Silivri il heyeti Gözlemci', 'ilheyeti', 'Serhendi!Ilh08', 'viewer_unit', 'BRM-08'),
+    ('Nezir Dergah Gözlemci', 'nezir', 'Serhendi!Nzr09', 'viewer_unit', 'BRM-09'),
 ]
 
 
@@ -208,16 +232,95 @@ def load_defaults(force_reset: bool = False):
         tx.type = 'Malzeme'
         tx.save()
 
-    # Eski örnek başlangıç hareketlerini (HRK-1001..1013 ve otomatik başlangıç kayıtları) bir defaya mahsus sıfırla
-    if not SecurityAuditLog.objects.filter(action='BALANCES_ZEROED_V1').exists():
-        Transaction.objects.all().delete()
-        UnitItem.objects.all().update(debt=Decimal('0.00'), paid=Decimal('0.00'), description='')
+    # 2026 SİLİVRİ PATATES tablosu verilerini bir defaya mahsus dergahlara yükle
+    if not SecurityAuditLog.objects.filter(action='PATATES_2026_LOADED_V2').exists():
+        # Nezir Dergah ve eksik birimleri ekle (mevcut birimlerin yetkili/telefon bilgilerine dokunma)
+        for uid, name, contact, phone in DEFAULT_UNITS:
+            if not Unit.objects.filter(pk=uid).exists():
+                Unit.objects.create(
+                    id=uid,
+                    name=name,
+                    contact=contact,
+                    phone=encrypt_sensitive(phone),
+                )
+
+        # Her birimin Patates kalemini bul (isme veya ID'ye göre) ve güncelle, mükerrer Patates kalemi varsa temizle
+        for iid, unit_id, iname, idesc, debt, paid in DEFAULT_UNIT_ITEMS:
+            if not Unit.objects.filter(pk=unit_id).exists():
+                continue
+            if iname == 'Patates':
+                existing_patates = list(
+                    UnitItem.objects.filter(unit_id=unit_id, name__iexact='Patates').order_by('id')
+                )
+                if existing_patates:
+                    target_item = existing_patates[0]
+                    target_item.name = 'Patates'
+                    target_item.description = idesc
+                    target_item.debt = Decimal(debt)
+                    target_item.paid = Decimal(paid)
+                    target_item.save()
+                    # Aynı birimde mükerrer başka Patates kalemi açılmışsa sil
+                    for extra in existing_patates[1:]:
+                        extra.delete()
+                else:
+                    UnitItem.objects.update_or_create(
+                        id=iid,
+                        defaults={
+                            'unit_id': unit_id,
+                            'name': iname,
+                            'description': idesc,
+                            'debt': Decimal(debt),
+                            'paid': Decimal(paid),
+                        },
+                    )
+            elif not UnitItem.objects.filter(unit_id=unit_id, name__iexact=iname).exists():
+                UnitItem.objects.update_or_create(
+                    id=iid,
+                    defaults={
+                        'unit_id': unit_id,
+                        'name': iname,
+                        'description': idesc,
+                        'debt': Decimal(debt),
+                        'paid': Decimal(paid),
+                    },
+                )
+
+        # Patates kalemlerine ait cari hareketleri temizle ve tablodaki güncel verilerle yeniden oluştur
+        patates_items_by_unit = {
+            it.unit_id: it for it in UnitItem.objects.filter(name__iexact='Patates')
+        }
+        Transaction.objects.filter(
+            models.Q(category__iexact='Patates') | models.Q(item__name__iexact='Patates')
+        ).delete()
+
+        last_tx = Transaction.objects.order_by('id').last()
+        prev_hash = last_tx.integrity_hash if last_tx and last_tx.integrity_hash else 'GENESIS'
+        for tid, date, unit_id, item_id, cat_name, tx_type, desc, debt, credit in DEFAULT_TRANSACTIONS:
+            if Unit.objects.filter(pk=unit_id).exists():
+                linked_item = patates_items_by_unit.get(unit_id) or UnitItem.objects.filter(pk=item_id).first()
+                Transaction.objects.filter(pk=tid).delete()
+                tx = Transaction(
+                    id=tid,
+                    date=date,
+                    unit_id=unit_id,
+                    item=linked_item,
+                    category=cat_name,
+                    type=tx_type,
+                    description=desc,
+                    debt=Decimal(debt),
+                    credit=Decimal(credit),
+                    created_by=ADMIN_NAME,
+                    prev_hash=prev_hash,
+                )
+                tx.save()
+                prev_hash = tx.integrity_hash
+
         SecurityAuditLog.objects.create(
-            action='BALANCES_ZEROED_V1',
+            action='PATATES_2026_LOADED_V2',
             severity=SecurityAuditLog.Severity.INFO,
             username='system',
             ip_address='127.0.0.1',
-            description='Tüm cari kalem bakiyeleri ve örnek hareketler sıfırlandı (0,00 TL).',
+            description='2026 Silivri Patates verileri (120 Çuval, 216.000 TL Borç, 193.800 TL Ödenen, 22.200 TL Kalan) dergahlara yüklendi.',
         )
 
     if force_reset or not has_any_units:
@@ -226,5 +329,5 @@ def load_defaults(force_reset: bool = False):
             severity=SecurityAuditLog.Severity.INFO,
             username='system',
             ip_address='127.0.0.1',
-            description='Varsayılan 8 birim (şifreli), cari kalemler, hareketler ve kullanıcılar yüklendi.',
+            description='Varsayılan 9 birim (şifreli), cari kalemler, hareketler ve kullanıcılar yüklendi.',
         )
